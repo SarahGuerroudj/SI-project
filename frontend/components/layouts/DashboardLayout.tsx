@@ -10,12 +10,15 @@ import {
     FolderOpen,
     GripVertical,
     Settings,
-    Bell
+    Bell,
+    PanelLeft
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import Chatbot from '../Chatbot';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentNav } from '../../hooks/usePersistentNav';
+import { useFavorites } from '../../contexts/FavoritesContext';
+import { useToast } from '../../contexts/ToastContext';
 import { defaultMainNavItems, defaultResourceItems } from '../../config/navigation';
 import { NavItem } from '../../types/navigation';
 
@@ -56,8 +59,11 @@ const MobileNavLink: React.FC<{
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const location = useLocation();
     const { user, isAuthenticated, openModal } = useAuth();
+    const { addFavorite } = useFavorites();
+    const { addToast } = useToast();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [resourcesOpen, setResourcesOpen] = useState(true);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Use the custom hook to manage persistent drag-and-drop ordering for both lists
     const { items: mainNavItems, onDragEnd: onMainDragEnd } = usePersistentNav<NavItem>('navOrder', defaultMainNavItems);
@@ -66,7 +72,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return (
         <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden selection:bg-lime-400 selection:text-slate-900 transition-colors duration-300">
             {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-slate-900 flex-shrink-0 hidden md:flex flex-col border-r border-slate-200 dark:border-slate-800 z-20 transition-colors duration-300">
+            <aside className={`w-64 bg-white dark:bg-slate-900 flex-shrink-0 hidden md:flex flex-col border-r border-slate-200 dark:border-slate-800 z-20 transition-all duration-300 ${isSidebarCollapsed ? '-ml-64' : ''}`}>
                 <div className="p-8">
                     <Link to="/" className="flex items-center gap-3 mb-1 group">
                         <div className="bg-gradient-to-br from-lime-400 to-lime-600 p-1.5 rounded-lg shadow-sm">
@@ -101,6 +107,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                                                         ref={dragProvided.innerRef}
                                                         {...dragProvided.draggableProps}
                                                         className={`flex items-start group ${snapshot.isDragging ? 'opacity-80' : ''}`}
+                                                        onContextMenu={(e) => {
+                                                            e.preventDefault();
+                                                            // Logic to add to favorites
+                                                            const favItem = {
+                                                                id: item.id,
+                                                                title: item.name,
+                                                                description: `Quick access to ${item.name}`,
+                                                                // We can't easily serialize the React Node icon to localStorage, 
+                                                                // so we might need a workaround or just store the path/name.
+                                                                // For now, let's just store simple metadata.
+                                                                meta: { path: item.path }
+                                                            };
+                                                            // We need access to addFavorite here. 
+                                                            // I will need to add the hook call at the top of the component.
+                                                            addFavorite(favItem);
+                                                            // Optional: Show toast
+                                                        }}
                                                     >
                                                         <div
                                                             {...dragProvided.dragHandleProps}
@@ -145,6 +168,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                                                                                                                 ref={resProvided.innerRef}
                                                                                                                 {...resProvided.draggableProps}
                                                                                                                 className={`flex items-center group ${resSnapshot.isDragging ? 'opacity-80' : ''}`}
+                                                                                                                onContextMenu={(e) => {
+                                                                                                                    e.preventDefault();
+                                                                                                                    const favItem = {
+                                                                                                                        id: resource.id,
+                                                                                                                        title: resource.name,
+                                                                                                                        description: `Quick access to ${resource.name}`,
+                                                                                                                        meta: { path: resource.path }
+                                                                                                                    };
+                                                                                                                    addFavorite(favItem);
+                                                                                                                    addToast('success', `Added to favorites`);
+                                                                                                                }}
                                                                                                             >
                                                                                                                 <div
                                                                                                                     {...resProvided.dragHandleProps}
@@ -240,6 +274,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                                 className="md:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                             >
                                 <Menu size={20} />
+                            </button>
+                            <button
+                                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                                className="hidden md:flex p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
+                            >
+                                <PanelLeft size={20} />
                             </button>
                             <div className="text-sm font-medium text-slate-900 dark:text-white md:hidden">
                                 Route<span className="text-lime-500">Mind</span>

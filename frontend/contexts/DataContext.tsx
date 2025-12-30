@@ -87,6 +87,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           clientId: s.client,
           // Use client_details for name if available, otherwise fallback
           clientName: s.client_details?.first_name || s.client_details?.username || 'Unknown',
+          destinationId: s.destination,
           destination: s.destination_details?.name || 'Unknown',
           weight: s.weight_kg,
           volume: s.volume_m3,
@@ -343,16 +344,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
       } else if (entityType === 'incidents') {
         const incItem = item as any;
-        const payload = {
-          type: incItem.type,
-          description: incItem.description,
-          date: incItem.date,
-          related_entity_id: incItem.relatedEntityId,
-          resolved: incItem.resolved || false,
-          driver: incItem.driverId || null,
-          vehicle: incItem.vehicleId || null
-        };
-        await apiClient.post(ENDPOINTS.INCIDENTS, payload);
+        const formData = new FormData();
+        formData.append('type', incItem.type);
+        formData.append('description', incItem.description);
+        formData.append('date', incItem.date);
+        formData.append('resolved', String(incItem.resolved || false));
+        if (incItem.relatedEntityId) formData.append('related_entity_id', incItem.relatedEntityId);
+        if (incItem.driverId) formData.append('driver', incItem.driverId);
+        if (incItem.vehicleId) formData.append('vehicle', incItem.vehicleId);
+
+        // Check for file in a special property 'photoFile' passed from component
+        if (incItem.photoFile) {
+          formData.append('photo', incItem.photoFile);
+        }
+
+        await apiClient.post(ENDPOINTS.INCIDENTS, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         queries['incidents'].refetch();
 
       } else if (entityType === 'complaints') {
@@ -428,7 +436,29 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             type: destItem.type,
             is_active: destItem.status === 'Active'
           };
+        } else if (entityType === 'shipments') {
+          const shipmentItem = item as any;
+          payload = {
+            id: shipmentItem.id,
+            client: shipmentItem.clientId,
+            destination: shipmentItem.destinationId,
+            weight_kg: shipmentItem.weight,
+            volume_m3: shipmentItem.volume,
+            price: shipmentItem.price,
+            status: shipmentItem.status,
+            estimated_delivery: shipmentItem.estimatedDelivery ? shipmentItem.estimatedDelivery.split('T')[0] : null,
+            currency: shipmentItem.currency
+          };
+        } else if (entityType === 'routes') {
+          const routeItem = item as any;
+          payload = {
+            status: routeItem.status,
+            actual_distance_km: routeItem.actualDistance,
+            actual_duration_hours: routeItem.actualDuration,
+            fuel_consumed_liters: routeItem.fuelConsumed
+          };
         }
+
 
         await apiClient.put(`${endpoint}${item.id}/`, payload);
         queries[entityType as keyof typeof queries].refetch();

@@ -10,15 +10,7 @@ interface Props {
 
 const FavoritesList: React.FC<Props> = ({ items, onRemove, variant = 'grid' }) => {
   if (!items || items.length === 0) {
-    return (
-      <div className="p-8 text-center text-slate-500">
-        <div className="mx-auto w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-          <Star className="text-lime-500" size={32} />
-        </div>
-        <h4 className="font-semibold text-lg mb-1">No favorites yet</h4>
-        <p className="text-sm">Add items to your favorites to see them here.</p>
-      </div>
-    );
+    return null;
   }
 
   return (

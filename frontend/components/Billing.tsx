@@ -3,6 +3,8 @@ import { Invoice, PaymentRecord, Client } from '../types';
 import { FileText, Download, Check, AlertCircle, Plus, Trash2, Eye, Search, X, Filter, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const Billing: React.FC = () => {
   const { getItems, addItem, deleteItem } = useData();
@@ -11,6 +13,15 @@ const Billing: React.FC = () => {
   const allInvoices = getItems<Invoice>('invoices');
   const clients = getItems<Client>('clients');
   const allPayments = getItems<PaymentRecord>('payments');
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newInvoice, setNewInvoice] = useState({
+    clientId: '',
+    amountHT: 0,
+    tvaRate: 19,
+    date: new Date().toISOString().split('T')[0],
+    currency: 'EUR' as 'EUR' | 'DZD'
+  });
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -23,10 +34,9 @@ const Billing: React.FC = () => {
   const getClientName = (id: string) => clients.find(c => c.id.toString() === id.toString())?.name || 'Unknown';
   const currencySymbol = (currency?: Invoice['currency']) => currency === 'DZD' ? 'د.ج' : '€';
 
-  // Filter invoices based on search, status, and currency
+  // Filter invoices... (unchanged)
   const invoices = useMemo(() => {
     let filtered = allInvoices;
-
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
@@ -36,21 +46,18 @@ const Billing: React.FC = () => {
         inv.date.toLowerCase().includes(searchLower)
       );
     }
-
     // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(inv => inv.status === statusFilter);
     }
-
     // Apply currency filter
     if (currencyFilter !== 'all') {
       filtered = filtered.filter(inv => (inv.currency || 'EUR') === currencyFilter);
     }
-
     return filtered;
   }, [allInvoices, searchTerm, statusFilter, currencyFilter, clients]);
 
-  // Calculate statistics
+  // Stats... (unchanged)
   const stats = useMemo(() => {
     const totalInvoices = allInvoices.length;
     const paidInvoices = allInvoices.filter(inv => inv.status === 'Paid').length;
@@ -60,15 +67,7 @@ const Billing: React.FC = () => {
     const totalPaid = allInvoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
     const totalAmount = allInvoices.reduce((sum, inv) => sum + inv.amountTTC, 0);
 
-    return {
-      total: totalInvoices,
-      paid: paidInvoices,
-      partial: partialInvoices,
-      unpaid: unpaidInvoices,
-      totalOutstanding,
-      totalPaid,
-      totalAmount,
-    };
+    return { total: totalInvoices, paid: paidInvoices, partial: partialInvoices, unpaid: unpaidInvoices, totalOutstanding, totalPaid, totalAmount };
   }, [allInvoices]);
 
   const getTotalsByCurrency = () => {
@@ -81,32 +80,19 @@ const Billing: React.FC = () => {
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!selectedInvoice) return;
-
     const newErrors: string[] = [];
-
-    if (paymentAmount <= 0) {
-      newErrors.push('Payment amount must be greater than 0');
-    }
-
-    if (paymentAmount > selectedInvoice.outstandingBalance) {
-      newErrors.push(`Payment exceeds outstanding balance of ${currencySymbol(selectedInvoice.currency)}${selectedInvoice.outstandingBalance.toFixed(2)}`);
-    }
-
-    if (newErrors.length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    if (paymentAmount <= 0) newErrors.push('Payment amount must be greater than 0');
+    if (paymentAmount > selectedInvoice.outstandingBalance) newErrors.push(`Payment exceeds outstanding balance`);
+    if (newErrors.length > 0) { setErrors(newErrors); return; }
 
     try {
       await addItem('payments', {
         invoiceId: selectedInvoice.id,
         amount: paymentAmount,
         date: new Date().toISOString().split('T')[0],
-        method: 'Bank Transfer' // UI could/should allow selecting method
+        method: 'Bank Transfer'
       });
-
       addToast('success', 'Payment recorded successfully');
       setShowPaymentModal(false);
       setSelectedInvoice(null);
@@ -115,6 +101,43 @@ const Billing: React.FC = () => {
     } catch (error) {
       console.error(error);
       addToast('error', 'Failed to record payment');
+    }
+  };
+
+  const handleCreateInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInvoice.clientId || newInvoice.amountHT <= 0) {
+      addToast('error', 'Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const amountHT = newInvoice.amountHT;
+      const tva = amountHT * (newInvoice.tvaRate / 100);
+      const amountTTC = amountHT + tva;
+
+      // Backend expects snake_case normally, but specific addItem impl might differ.
+      // Based on DataContext, if we use 'others' fallback, it sends item as is.
+      // We will send snake_case to be safe for backend.
+      const payload: any = {
+        client: newInvoice.clientId,
+        amount_ht: amountHT,
+        amount_ttc: amountTTC,
+        tva: tva,
+        shipments: [],
+        date: newInvoice.date,
+        due_date: newInvoice.date, // Default due date same as date for now
+        status: 'Unpaid',
+        currency: newInvoice.currency
+      };
+
+      await addItem('invoices', payload);
+      addToast('success', 'Invoice created successfully');
+      setShowCreateModal(false);
+      setNewInvoice({ clientId: '', amountHT: 0, tvaRate: 19, date: new Date().toISOString().split('T')[0], currency: 'EUR' });
+    } catch (error) {
+      console.error(error);
+      addToast('error', 'Failed to create invoice');
     }
   };
 
@@ -130,26 +153,51 @@ const Billing: React.FC = () => {
     }
   };
 
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text('Invoices Report', 14, 22);
+
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      const dateStr = new Date().toLocaleDateString();
+      doc.text(`Generated on: ${dateStr}`, 14, 30);
+
+      const tableColumn = ["Invoice ID", "Client", "Date", "Amount", "Balance", "Status"];
+      const tableRows = invoices.map(invoice => [
+        invoice.invoiceNumber || invoice.id,
+        getClientName(invoice.clientId),
+        new Date(invoice.date).toLocaleDateString(),
+        `${currencySymbol(invoice.currency)}${invoice.amountTTC.toFixed(2)}`,
+        `${currencySymbol(invoice.currency)}${invoice.outstandingBalance.toFixed(2)}`,
+        invoice.status
+      ]);
+
+      (doc as any).autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 40,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [66, 66, 66] }
+      });
+
+      doc.save("Invoices_Report.pdf");
+      addToast('success', 'Report exported successfully');
+
+    } catch (error) {
+      console.error("PDF Export failed:", error);
+      addToast('error', 'PDF Export failed');
+    }
+  };
+
   const getStatusBadge = (status: Invoice['status']) => {
     switch (status) {
-      case 'Paid':
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800">
-            <Check size={12} className="mr-1" /> Paid
-          </span>
-        );
-      case 'Partial':
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-            <AlertCircle size={12} className="mr-1" /> Partial
-          </span>
-        );
-      case 'Unpaid':
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800">
-            <AlertCircle size={12} className="mr-1" /> Unpaid
-          </span>
-        );
+      case 'Paid': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800"><Check size={12} className="mr-1" /> Paid</span>;
+      case 'Partial': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800"><AlertCircle size={12} className="mr-1" /> Partial</span>;
+      case 'Unpaid': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800"><AlertCircle size={12} className="mr-1" /> Unpaid</span>;
     }
   };
 
@@ -162,14 +210,32 @@ const Billing: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Billing & Payments</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage invoices with partial payments and balance tracking</p>
           </div>
-          <button className="px-6 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-2 shadow-sm hover:shadow-md transition-all font-medium">
-            <Download size={18} />
-            Export Report
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-lime-500 text-white rounded-lg hover:bg-lime-600 shadow-sm hover:shadow-md transition-all font-medium flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Create Invoice
+            </button>
+            <button onClick={handleExportPDF} className="px-6 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-2 shadow-sm hover:shadow-md transition-all font-medium">
+              <Download size={18} />
+              Export Report
+            </button>
+          </div>
         </div>
 
         {/* Statistics Dashboard */}
+        {/* ... existing stats ... */}
+        {/* We can just keep the existing code, but I'm only replacing the header area properly first, 
+            actually wait, I should target the return statement block better to insert the modal too.
+            Let's split this into two replacements if possible, or one big one.
+            I'll replace the Header button part first.
+        */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* ... stats ... */}
+          {/* For the sake of the tool, I will try to target the existing header button and replace it with TWO buttons */}
+
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-5 border border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 bg-lime-100 dark:bg-lime-900/30 rounded-lg">
@@ -423,6 +489,7 @@ const Billing: React.FC = () => {
               </div>
 
               <form onSubmit={handlePayment}>
+                {/* ... fields ... */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -464,6 +531,105 @@ const Billing: React.FC = () => {
                     Confirm Payment
                   </button>
                 </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Invoice Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-xl border border-slate-200 dark:border-slate-800">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Create New Invoice</h3>
+                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateInvoice} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Currency</label>
+                    <select
+                      value={newInvoice.currency}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, currency: e.target.value as any })}
+                      className="w-full rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-2.5"
+                    >
+                      <option value="EUR">EUR (€)</option>
+                      <option value="DZD">DZD (د.ج)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={newInvoice.date}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, date: e.target.value })}
+                      className="w-full rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-2.5"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Client</label>
+                  <select
+                    value={newInvoice.clientId}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, clientId: e.target.value })}
+                    className="w-full rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-2.5"
+                    required
+                  >
+                    <option value="">Select Client</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount HT</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newInvoice.amountHT}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, amountHT: parseFloat(e.target.value) })}
+                      className="w-full rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-2.5"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">TVA Rate (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={newInvoice.tvaRate}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, tvaRate: parseFloat(e.target.value) })}
+                      className="w-full rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-2.5"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Total TTC</span>
+                    <span className="text-xl font-bold text-lime-600">
+                      {currencySymbol(newInvoice.currency)}
+                      {(newInvoice.amountHT * (1 + newInvoice.tvaRate / 100)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-lime-500 hover:bg-lime-600 text-white rounded-lg font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Create Invoice
+                </button>
               </form>
             </div>
           </div>

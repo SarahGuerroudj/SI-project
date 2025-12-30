@@ -11,6 +11,13 @@ const Routes: React.FC = () => {
   const [shipmentSearch, setShipmentSearch] = useState('');
   const [viewingRoute, setViewingRoute] = useState<Route | null>(null);
 
+  // Route Completion State
+  const [completionData, setCompletionData] = useState({
+    actualDistance: '',
+    fuelConsumed: '',
+    actualDuration: ''
+  });
+
   // UI state: collapsible sections
   const [driversOpen, setDriversOpen] = useState(true);
   const [vehiclesOpen, setVehiclesOpen] = useState(true);
@@ -159,8 +166,8 @@ const Routes: React.FC = () => {
                       key={route.id}
                       onClick={() => handleViewRoute(route)}
                       className={`w-full text-left p-3 rounded-lg border transition-all ${isActive
-                          ? 'bg-lime-50 dark:bg-lime-900/20 border-lime-300 dark:border-lime-700 shadow-sm'
-                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
+                        ? 'bg-lime-50 dark:bg-lime-900/20 border-lime-300 dark:border-lime-700 shadow-sm'
+                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
                         }`}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -315,10 +322,10 @@ const Routes: React.FC = () => {
                           onClick={() => isAvailable && setSelectedDriver(driver.id)}
                           disabled={!isAvailable}
                           className={`text-left p-4 rounded-lg border-2 transition-all ${isSelected
-                              ? 'border-lime-500 bg-lime-50 dark:bg-lime-900/20 shadow-md'
-                              : isAvailable
-                                ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
-                                : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed'
+                            ? 'border-lime-500 bg-lime-50 dark:bg-lime-900/20 shadow-md'
+                            : isAvailable
+                              ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed'
                             }`}
                         >
                           <div className="flex items-start justify-between mb-2">
@@ -329,10 +336,10 @@ const Routes: React.FC = () => {
                             <div className="text-xs text-slate-500 dark:text-slate-400">License: {driver.licenseNumber}</div>
                             <div className="flex items-center gap-1">
                               <span className={`text-xs px-2 py-0.5 rounded-full ${driver.status === 'Available'
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                  : driver.status === 'On Route'
-                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : driver.status === 'On Route'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
                                 }`}>
                                 {driver.status}
                               </span>
@@ -372,10 +379,10 @@ const Routes: React.FC = () => {
                           onClick={() => isAvailable && setSelectedVehicle(vehicle.id)}
                           disabled={!isAvailable}
                           className={`text-left p-4 rounded-lg border-2 transition-all ${isSelected
-                              ? 'border-lime-500 bg-lime-50 dark:bg-lime-900/20 shadow-md'
-                              : isAvailable
-                                ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
-                                : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed'
+                            ? 'border-lime-500 bg-lime-50 dark:bg-lime-900/20 shadow-md'
+                            : isAvailable
+                              ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed'
                             }`}
                         >
                           <div className="flex items-start justify-between mb-2">
@@ -389,10 +396,10 @@ const Routes: React.FC = () => {
                             <div className="text-xs text-slate-500 dark:text-slate-400">Capacity: {vehicle.capacityKg.toLocaleString()} kg</div>
                             <div className="flex items-center gap-1">
                               <span className={`text-xs px-2 py-0.5 rounded-full ${vehicle.status === 'Available'
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                  : vehicle.status === 'In Use'
-                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : vehicle.status === 'In Use'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                                 }`}>
                                 {vehicle.status}
                               </span>
@@ -466,15 +473,15 @@ const Routes: React.FC = () => {
                             <div
                               key={shipment.id}
                               className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${isSelected
-                                  ? 'border-lime-500 bg-lime-50 dark:bg-lime-900/20 shadow-sm'
-                                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
+                                ? 'border-lime-500 bg-lime-50 dark:bg-lime-900/20 shadow-sm'
+                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-sm'
                                 }`}
                               onClick={() => handleToggleShipment(shipment.id)}
                             >
                               <div className="flex items-start gap-3 flex-1">
                                 <div className={`mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected
-                                    ? 'bg-lime-500 border-lime-500'
-                                    : 'border-slate-300 dark:border-slate-600'
+                                  ? 'bg-lime-500 border-lime-500'
+                                  : 'border-slate-300 dark:border-slate-600'
                                   }`}>
                                   {isSelected && <CheckCircle className="text-white" size={14} />}
                                 </div>
@@ -499,8 +506,8 @@ const Routes: React.FC = () => {
                                     ${shipment.price.toFixed(2)}
                                   </div>
                                   <div className={`text-xs px-2 py-1 rounded-full ${isSelected
-                                      ? 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400'
-                                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                    ? 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                                     }`}>
                                     {isSelected ? 'Selected' : 'Click to select'}
                                   </div>
@@ -634,12 +641,12 @@ const Routes: React.FC = () => {
                         <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 text-right">{s.volume} m³</td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${s.status === 'Delivered'
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : s.status === 'In Transit'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                : s.status === 'Pending'
-                                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : s.status === 'In Transit'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : s.status === 'Pending'
+                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
                             }`}>
                             {s.status}
                           </span>
@@ -651,19 +658,65 @@ const Routes: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div className="text-sm text-slate-500 dark:text-slate-400">
-                Route created on {new Date(viewingRoute!.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            {viewingRoute!.status !== 'Completed' ? (
+              <div className="flex gap-4 items-end mt-auto pt-6 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex-1 grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Act. Distance (km)</label>
+                    <input
+                      type="number"
+                      value={completionData.actualDistance}
+                      onChange={e => setCompletionData({ ...completionData, actualDistance: e.target.value })}
+                      className="w-full text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg p-2"
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Fuel (L)</label>
+                    <input
+                      type="number"
+                      value={completionData.fuelConsumed}
+                      onChange={e => setCompletionData({ ...completionData, fuelConsumed: e.target.value })}
+                      className="w-full text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg p-2"
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Duration (Hours)</label>
+                    <input
+                      type="number"
+                      value={completionData.actualDuration}
+                      onChange={e => setCompletionData({ ...completionData, actualDuration: e.target.value })}
+                      className="w-full text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg p-2"
+                      placeholder="0.0"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    // Handle completion logic here (mock)
+                    try {
+                      // In real app, call updateItem('routes', ...)
+                      addToast('success', 'Route completed and metrics saved');
+                    } catch (e) { console.error(e) }
+                  }}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-lime-500 hover:bg-lime-600 text-white font-medium shadow-sm hover:shadow-md transition-all h-fit"
+                >
+                  <CheckCircle size={18} />
+                  Complete Route
+                </button>
               </div>
-              <button className="flex items-center gap-2 px-6 py-3 rounded-lg bg-lime-500 hover:bg-lime-600 text-white font-medium shadow-sm hover:shadow-md transition-all">
-                <Navigation size={18} />
-                Start Navigation
-              </button>
-            </div>
+            ) : (
+              <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-4 rounded-lg flex items-center justify-center w-full">
+                  <CheckCircle className="mr-2" /> Route Completed
+                </div>
+              </div>
+            )}
           </section>
         )}
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 

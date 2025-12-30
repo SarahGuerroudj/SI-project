@@ -10,6 +10,11 @@ interface User {
   role: string;
   phone?: string;
   address?: string;
+  first_name?: string;
+  last_name?: string;
+  bio?: string;
+  avatar?: string;
+  createdAt?: string;
 }
 
 interface AuthContextType {
@@ -25,6 +30,7 @@ interface AuthContextType {
   closeModal: () => void;
   hasRole: (role: string) => boolean;
   authorize: (roles: string[]) => boolean;
+  updateProfile: (updates: Partial<User>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,6 +161,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  const updateProfile = async (updates: Partial<User>): Promise<boolean> => {
+    try {
+      console.log('Updating profile with:', updates);
+      const response = await apiClient.patch(`${ENDPOINTS.USERS}me/`, updates);
+      console.log('Profile update response:', response.data);
+      setUser(response.data);
+      return true;
+    } catch (error: any) {
+      console.error('Profile update failed', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Profile update failed: ${JSON.stringify(error.response?.data || error.message)}`);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -168,7 +189,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       openModal,
       closeModal,
       hasRole,
-      authorize
+      authorize,
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>

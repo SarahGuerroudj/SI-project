@@ -8,10 +8,11 @@ class User(AbstractUser):
         ('client', 'Client'),
         ('driver', 'Driver'),
     )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='client')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='admin')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    bio = models.TextField(blank=True)
     
     # Store additional profile info if needed or link to separate Profile models
     

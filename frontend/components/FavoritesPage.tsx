@@ -16,50 +16,49 @@ const FavoritesPage: React.FC = () => {
         <p className="text-slate-500 dark:text-slate-400">Your saved shortcuts and frequently-used items</p>
       </div>
 
-      {/* Quick Actions Section */}
+      {/* Main Saved Items Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Zap className="text-lime-500" size={20} />
+
+
+        {/* Quick Actions Sub-section */}
+        <div className="mb-8">
+          <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Zap size={16} className="text-lime-500" />
             Quick Actions
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Fast access to common tasks</p>
-        </div>
+          </h4>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickActionCard
-            title="➕ Create Expédition"
-            href="/shipments"
-            icon={<Package size={20} />}
-          />
-          <QuickActionCard
-            title="➕ Create Tournée"
-            href="/routes"
-            icon={<Activity size={20} />}
-          />
-          <QuickActionCard
-            title="📄 Create Facture"
-            href="/billing"
-            icon={<DollarSign size={20} />}
-          />
-          <QuickActionCard
-            title="👀 View All Clients"
-            href="/clients"
-            icon={<User size={20} />}
-          />
-        </div>
-      </div>
-
-      {/* Saved Favorites */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Saved Items</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Quick access to things you marked as favorite.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <QuickActionCard
+              title="Create Expédition"
+              href="/shipments"
+              icon={<Package size={20} />}
+            />
+            <QuickActionCard
+              title="Create Tournée"
+              href="/routes"
+              icon={<Activity size={20} />}
+            />
+            <QuickActionCard
+              title="Create Facture"
+              href="/billing"
+              icon={<DollarSign size={20} />}
+            />
+            <QuickActionCard
+              title="View All Clients"
+              href="/clients"
+              icon={<User size={20} />}
+            />
           </div>
         </div>
 
-        <FavoritesList items={favorites} onRemove={removeFavorite} variant="grid" />
+        {/* Favorites List Sub-section */}
+        <div>
+          <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Activity size={16} className="text-lime-500" />
+            Your Favorites
+          </h4>
+          <FavoritesList items={favorites} onRemove={removeFavorite} variant="grid" />
+        </div>
       </div>
     </div>
   );

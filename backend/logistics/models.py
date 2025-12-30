@@ -66,6 +66,9 @@ class Route(models.Model):
     vehicle = models.ForeignKey('fleet.Vehicle', on_delete=models.CASCADE, related_name='routes')
     shipments = models.ManyToManyField(Shipment, related_name='routes')
     date = models.DateField()
+    actual_distance_km = models.FloatField(null=True, blank=True)
+    actual_duration_hours = models.FloatField(null=True, blank=True)
+    fuel_consumed_liters = models.FloatField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Planned')
     
     def __str__(self):

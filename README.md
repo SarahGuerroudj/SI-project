@@ -60,7 +60,6 @@ Follow these steps to set up the project locally.
     ```bash
     python manage.py runserver
     ```
-    The API will be available at `http://127.0.0.1:8000`.
 
 ### 2. Frontend Setup (React)
 
@@ -78,8 +77,6 @@ Follow these steps to set up the project locally.
     ```bash
     npm run dev
     ```
-    The app will handle requests at `http://localhost:5173` (or similar).
-
 ---
 
 ##  Viewing Database Tables (Django Admin)
@@ -107,4 +104,4 @@ To enable the AI features (Forecasts/Analytics):
 
 *   **Frontend**: React, TypeScript, Tailwind CSS, Lucide Icons, React Query.
 *   **Backend**: Django, Django REST Framework, Simple JWT.
-*   **Database**: SQLite (default for dev), extensible to PostgreSQL.
+*   **Database**: SQLite

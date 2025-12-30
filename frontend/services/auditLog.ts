@@ -9,7 +9,7 @@ interface AuditEntry {
   details?: Record<string, any>;
 }
 
-const STORAGE_KEY = 'evworld_audit_log';
+const STORAGE_KEY = 'routemind_audit_log';
 
 function nowISO() { return new Date().toISOString(); }
 
@@ -25,7 +25,7 @@ function persist(entry: AuditEntry) {
 
 export const auditLog = {
   log: (action: string, level: AuditLevel = 'info', userId?: string | null, details?: Record<string, any>) => {
-    const entry: AuditEntry = { id: Math.random().toString(36).slice(2,9), time: nowISO(), userId: userId ?? null, action, level, details };
+    const entry: AuditEntry = { id: Math.random().toString(36).slice(2, 9), time: nowISO(), userId: userId ?? null, action, level, details };
     // Console output for developer visibility
     if (level === 'security' || level === 'error') {
       // eslint-disable-next-line no-console

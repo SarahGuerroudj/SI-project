@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, Check, CheckCheck, Trash2, Filter, X, Package, Truck, AlertTriangle, DollarSign, Calendar } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bell, Check, CheckCheck, Trash2, Filter, X, Package, Truck, AlertTriangle, DollarSign, Calendar, ArrowLeft } from 'lucide-react';
 
 interface Notification {
     id: string;
@@ -11,6 +12,7 @@ interface Notification {
 }
 
 const Notifications: React.FC = () => {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState<Notification[]>([
         {
             id: '1',
@@ -112,25 +114,34 @@ const Notifications: React.FC = () => {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-4 max-w-4xl mx-auto">
             {/* Header */}
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-4xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                            <div className="p-3 bg-lime-100 dark:bg-lime-900/30 rounded-xl">
-                                <Bell className="text-lime-600 dark:text-lime-400" size={32} />
-                            </div>
-                            Notifications
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2">
-                            Stay updated with your logistics operations
-                        </p>
+            <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                            aria-label="Go back"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                        <div className="p-2 bg-lime-100 dark:bg-lime-900/30 rounded-lg">
+                            <Bell className="text-lime-600 dark:text-lime-400" size={24} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                                Notifications
+                            </h1>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                Stay updated with your logistics operations
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Stats and Actions */}
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="px-4 py-2 bg-lime-100 dark:bg-lime-900/30 rounded-lg">
                             <span className="text-sm font-semibold text-lime-700 dark:text-lime-400">
@@ -165,16 +176,16 @@ const Notifications: React.FC = () => {
                 </div>
 
                 {/* Filter */}
-                <div className="flex items-center gap-2 mt-4">
-                    <Filter size={18} className="text-slate-400" />
+                <div className="flex items-center gap-2 mt-3">
+                    <Filter size={16} className="text-slate-400" />
                     <div className="flex gap-2">
                         {['all', 'unread', 'read'].map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f as any)}
                                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === f
-                                        ? 'bg-lime-400 text-slate-900'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                    ? 'bg-lime-400 text-slate-900'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                                     }`}
                             >
                                 {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -185,7 +196,7 @@ const Notifications: React.FC = () => {
             </div>
 
             {/* Notifications List */}
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {filteredNotifications.length === 0 ? (
                     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-12 text-center">
                         <Bell className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={48} />
@@ -203,8 +214,8 @@ const Notifications: React.FC = () => {
                         <div
                             key={notification.id}
                             className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border ${notification.read
-                                    ? 'border-slate-200 dark:border-slate-800'
-                                    : 'border-lime-400/50 dark:border-lime-500/50 bg-lime-50/50 dark:bg-lime-900/5'
+                                ? 'border-slate-200 dark:border-slate-800'
+                                : 'border-lime-400/50 dark:border-lime-500/50 bg-lime-50/50 dark:bg-lime-900/5'
                                 } p-4 hover:shadow-md transition-all group`}
                         >
                             <div className="flex items-start gap-4">

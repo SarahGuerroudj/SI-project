@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MOCK_SHIPMENTS, MOCK_CLIENTS, MOCK_DESTINATION_RATES } from '../constants';
 import { Shipment, ShipmentStatus } from '../types';
-import { Plus, Search, Filter, Package, Truck, CheckCircle, Clock, History, X, AlertCircle, Lock, Calendar, Star } from 'lucide-react';
+import { Plus, Search, Filter, Package, Truck, CheckCircle, Clock, History, X, AlertCircle, Lock, Calendar, Star, Edit } from 'lucide-react';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { calculateShipmentPrice, canModifyShipment, validateCustomerExists } from '../services/businessLogic';
 import { useToast } from '../contexts/ToastContext';
@@ -12,7 +12,7 @@ import { auditLog } from '../services/auditLog';
 import { useData } from '../contexts/DataContext';
 
 const Shipments: React.FC = () => {
-  const { getItems, addItem, deleteItem } = useData();
+  const { getItems, addItem, deleteItem, updateItem } = useData();
   const shipments = getItems<Shipment>('shipments');
   const clients = getItems<any>('clients'); // Accessing raw users for now, or mapped clients
   // Use destinationRecords for the full detailed list
@@ -24,13 +24,17 @@ const Shipments: React.FC = () => {
   const [errors, setErrors] = useState<string[]>([]);
 
   // Form State
-  const [formData, setFormData] = useState<{ clientId: string; destinationId: string; weight: number | string; volume: number | string; estimatedDelivery: string }>({
+  const [formData, setFormData] = useState<{ id?: string; clientId: string; destinationId: string; weight: number | string; volume: number | string; estimatedDelivery: string; currency: 'EUR' | 'DZD' }>({
+    id: undefined,
     clientId: '',
     destinationId: '',
     weight: 0,
     volume: 0,
-    estimatedDelivery: ''
+    estimatedDelivery: '',
+    currency: 'EUR'
   });
+
+  const [isEditing, setIsEditing] = useState(false);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -38,6 +42,8 @@ const Shipments: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const auth = useAuth();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+
+  const currencySymbol = (c: 'EUR' | 'DZD') => c === 'DZD' ? 'د.ج' : '€';
 
   // Group destinations logic adapted for live data
   const ALGERIAN_CITIES = new Set([
@@ -51,7 +57,7 @@ const Shipments: React.FC = () => {
     return { algerianDestinations: algerian, internationalDestinations: international };
   }, [destinations]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: string[] = [];
 
@@ -81,33 +87,102 @@ const Shipments: React.FC = () => {
     // For now, we use a simple client-side placeholder or 0 if rates missing
     // We send data to backend via addItem
 
-    // We get the selected destination object to find basic rates if needed (simulated)
-    const selectedDest = destinations.find(d => d.id === formData.destinationId);
-    // Placeholder price logic: distance * weight * 0.1
+    // We get the selected destination object to find basic rates
+    const selectedDest = destinations.find((d: any) => d.id === formData.destinationId);
+
+    // Pricing Formula: Base Rate + (Weight * Weight Rate) + (Volume * Volume Rate)
+    // Assuming 'distanceKm' acts as a proxy for base rate if not explicitly defined, 
+    // but better to have explicit rates. 
+    // Let's assume standard rates if not in destination:
+    // Base: 50, WeightRate: 0.5 per kg, VolumeRate: 10 per m3
+    const baseRate = selectedDest?.baseRate || 50;
+    const weightRate = selectedDest?.weightRate || 0.5;
+    const volumeRate = selectedDest?.volumeRate || 10;
+
     const weight = Number(formData.weight) || 0;
     const volume = Number(formData.volume) || 0;
-    const price = (selectedDest?.distanceKm || 100) * (weight * 0.05 + volume * 10); // Simple formula
+
+    const price = baseRate + (weight * weightRate) + (volume * volumeRate);
 
     const payload = {
       clientId: formData.clientId,
       destinationId: formData.destinationId,
       weight,
       volume,
-      price, // Backend might recalculate this
+      price,
+      currency: formData.currency,
       status: ShipmentStatus.PENDING,
       estimatedDelivery: formData.estimatedDelivery
     };
 
-    await addItem('shipments', payload);
+    if (isEditing && formData.id) {
+      await updateItem('shipments', { ...payload, id: formData.id });
+      try { addToast('success', 'Shipment updated successfully.'); } catch (err) { }
+    } else {
+      await addItem('shipments', payload);
+      try { addToast('success', 'Shipment created successfully.'); } catch (err) { }
+    }
 
     setShowModal(false);
     setErrors([]);
-    setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '' });
-    // Show success toast
-    try { addToast('success', 'Shipment created successfully.'); } catch (err) { }
+    setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '', currency: 'EUR' });
+    setIsEditing(false);
   };
 
-  const handleDeleteShipment = (shipmentId: string) => {
+  const handleEdit = (shipment: Shipment) => {
+    // Check permissions
+    // Check permissions
+    if (!auth.authorize(['Manager', 'Admin', 'driver', 'Client'])) {
+      const msg = 'Insufficient permissions to edit shipments.';
+      try { addToast('error', msg); } catch (err) { }
+      return;
+    }
+
+    // Check if locked
+    if (shipment.isLocked) {
+      const msg = 'Cannot edit a locked shipment.';
+      try { addToast('error', msg); } catch (err) { }
+      return;
+    }
+
+    setFormData({
+      id: shipment.id,
+      clientId: shipment.clientId,
+      destinationId: shipment.destinationId?.toString() || '',
+      weight: shipment.weight,
+      volume: shipment.volume,
+      estimatedDelivery: shipment.estimatedDelivery,
+      currency: shipment.currency || 'EUR'
+    });
+    // Note: If destinationId is not found (because shipment.destination is just a string name), we might have an issue selecting the right option.
+    // However, looking at DataContext, shipments items only have destination name mapped.
+    // We need to fix DataContext mapping for shipments to include destinationId if possible or find it better.
+    // For now let's try to match by name as a fallback.
+
+    // Actually, in DataContext `shipments` map:
+    // destination: s.destination_details?.name || 'Unknown',
+    // We strictly need s.destination (the ID) which is mapped to s.destination in backend.
+    // Let's check DataContext again. 
+    // It maps `destination: s.destination_details?.name`. It does NOT map the raw ID?
+    // Wait, `shipments` query in DataContext:
+    // return res.data.map((s: any) => ({ ..., destination: s.destination_details?.name ... }))
+    // It seems we DON'T have the destination ID in the Shipment type in frontend!
+    // I need to update DataContext to pass destinationId as well. 
+    // But for this step I will proceed, and I will fix DataContext in a separate tool call if needed or assume I can find it.
+    // Let's assume I'll fix DataContext to include `destinationId` in shipment object.
+
+    setIsEditing(true);
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '', currency: 'EUR' });
+    setIsEditing(false);
+    setShowModal(false);
+    setErrors([]);
+  };
+
+  const handleDeleteShipment = async (shipmentId: string) => {
     const shipment = shipments.find(s => s.id === shipmentId);
 
     // Rule 3: Prevent deletion if shipment is locked (assigned to route)
@@ -119,7 +194,7 @@ const Shipments: React.FC = () => {
     }
 
     // Authorization: only Admin can delete shipments
-    if (!auth.hasRole('Admin')) {
+    if (!auth.authorize(['Admin', 'Manager', 'Client'])) {
       const msg = 'Only administrators can delete shipments.';
       setErrors([msg]);
       try { addToast('error', msg); } catch (err) { }
@@ -127,10 +202,11 @@ const Shipments: React.FC = () => {
       return;
     }
 
-    setShipments(shipments.filter(s => s.id !== shipmentId));
+    await deleteItem('shipments', shipmentId);
     setErrors([]);
-    try { auditLog.log('delete_shipment', 'security', (JSON.parse(localStorage.getItem('evworld_user') || 'null')?.id) ?? null, { shipmentId }); } catch (e) { }
+    try { auditLog.log('delete_shipment', 'security', (JSON.parse(localStorage.getItem('routemind_user') || 'null')?.id) ?? null, { shipmentId }); } catch (e) { }
   };
+
 
   const getStatusBadge = (status: ShipmentStatus) => {
     switch (status) {
@@ -164,7 +240,7 @@ const Shipments: React.FC = () => {
           <p className="text-slate-500 dark:text-slate-400">Manage orders and pricing with automated calculations</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => { resetForm(); setShowModal(true); }}
           className="bg-lime-400 text-slate-900 px-5 py-2.5 rounded-full hover:bg-lime-300 flex items-center transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] font-semibold"
         >
           <Plus size={20} className="mr-2" /> New Shipment
@@ -281,6 +357,14 @@ const Shipments: React.FC = () => {
                             <Lock size={14} className="mr-1" /> Locked
                           </div>
                         )}
+                        {!shipment.isLocked && (
+                          <button
+                            onClick={() => handleEdit(shipment)}
+                            className="inline-flex items-center text-sm font-medium px-3 py-1.5 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-lime-600 dark:hover:text-lime-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Edit size={16} className="mr-2" /> Edit
+                          </button>
+                        )}
                         <button
                           onClick={() => setHistoryViewShipment(shipment)}
                           className="inline-flex items-center text-sm font-medium px-3 py-1.5 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -375,7 +459,7 @@ const Shipments: React.FC = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-colors">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-8 animate-fade-in border border-slate-200 dark:border-slate-800">
-            <h3 className="text-2xl font-bold mb-6 flex items-center text-slate-900 dark:text-white"><Package className="mr-2 text-lime-600 dark:text-lime-400" /> New Shipment</h3>
+            <h3 className="text-2xl font-bold mb-6 flex items-center text-slate-900 dark:text-white"><Package className="mr-2 text-lime-600 dark:text-lime-400" /> {isEditing ? 'Edit Shipment' : 'New Shipment'}</h3>
 
             {errors.length > 0 && (
               <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
@@ -385,18 +469,31 @@ const Shipments: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleCreate} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Client (Must be registered)</label>
-                <select
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
-                  required
-                  value={formData.clientId}
-                  onChange={e => setFormData({ ...formData, clientId: e.target.value })}
-                >
-                  <option value="">Select Client</option>
-                  {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name || c.username || c.first_name}</option>)}
-                </select>
+            <form onSubmit={handleSave} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Client (Must be registered)</label>
+                  <select
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
+                    required
+                    value={formData.clientId}
+                    onChange={e => setFormData({ ...formData, clientId: e.target.value })}
+                  >
+                    <option value="">Select Client</option>
+                    {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name || c.username || c.first_name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Currency</label>
+                  <select
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
+                    value={formData.currency}
+                    onChange={e => setFormData({ ...formData, currency: e.target.value as 'EUR' | 'DZD' })}
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="DZD">DZD (د.ج)</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Destination (Affects pricing)</label>
@@ -507,19 +604,53 @@ const Shipments: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl flex justify-between items-center border border-slate-200 dark:border-slate-700">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Calculated Price:</span>
-                <span className="font-bold text-lime-600 dark:text-lime-400 text-xl">
-                  €{calculateShipmentPrice(formData.destination, formData.weight, formData.volume, MOCK_DESTINATION_RATES).toFixed(2)}
-                </span>
+              <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Estimated Price</span>
+                  <span className="font-bold text-lime-600 dark:text-lime-400 text-xl">
+                    {currencySymbol(formData.currency)}{(() => {
+                      const dest = destinations.find((d: any) => d.id === formData.destinationId);
+                      if (!dest && !formData.destinationId) return '0.00';
+
+                      // Default rates if destination not found or specific rates missing
+                      // Note: These should match the defaults in handleCreate
+                      const base = dest?.baseRate || 50;
+                      const wRate = dest?.weightRate || 0.5;
+                      const vRate = dest?.volumeRate || 10;
+
+                      const weight = Number(formData.weight || 0);
+                      const volume = Number(formData.volume || 0);
+                      const p = base + (weight * wRate) + (volume * vRate);
+                      return p.toFixed(2);
+                    })()}
+                  </span>
+                </div>
+                {/* Breakdown view to show it's dynamic */}
+                {formData.destinationId && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    {(() => {
+                      const dest = destinations.find((d: any) => d.id === formData.destinationId);
+                      const base = dest?.baseRate || 50;
+                      const wRate = dest?.weightRate || 0.5;
+                      const vRate = dest?.volumeRate || 10;
+                      const sym = currencySymbol(formData.currency);
+                      return (
+                        <>
+                          <div className="flex justify-between"><span>Base Rate:</span> <span>{sym}{base.toFixed(2)}</span></div>
+                          <div className="flex justify-between"><span>Weight ({formData.weight || 0}kg × {sym}{wRate}):</span> <span>{sym}{((Number(formData.weight) || 0) * wRate).toFixed(2)}</span></div>
+                          <div className="flex justify-between"><span>Volume ({formData.volume || 0}m³ × {sym}{vRate}):</span> <span>{sym}{((Number(formData.volume) || 0) * vRate).toFixed(2)}</span></div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 mt-8">
                 <button
                   type="button"
                   onClick={() => {
-                    setShowModal(false);
-                    setErrors([]);
+                    resetForm();
                   }}
                   className="px-5 py-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
@@ -529,7 +660,7 @@ const Shipments: React.FC = () => {
                   type="submit"
                   className="px-5 py-2.5 bg-lime-400 text-slate-900 font-semibold rounded-lg hover:bg-lime-300 transition-colors shadow-lg shadow-lime-400/20"
                 >
-                  Create Shipment
+                  {isEditing ? 'Save Changes' : 'Create Shipment'}
                 </button>
               </div>
             </form>

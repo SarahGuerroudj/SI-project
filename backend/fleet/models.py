@@ -37,6 +37,8 @@ class Incident(models.Model):
     description = models.TextField()
     date = models.DateField()
     related_entity_id = models.CharField(max_length=50, blank=True, null=True, help_text="ID of related shipment, route, etc.")
+    photo = models.ImageField(upload_to='incidents/photos/', blank=True, null=True)
+    attachment = models.FileField(upload_to='incidents/docs/', blank=True, null=True)
     resolved = models.BooleanField(default=False)
     
     # Optional links to specific entities if we want strict FKs later, 

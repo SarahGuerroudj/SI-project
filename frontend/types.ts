@@ -43,10 +43,12 @@ export interface Shipment {
   id: string;
   clientId: string;
   clientName: string;
+  destinationId: string;
   destination: string;
   weight: number;
   volume: number;
   price: number;
+  currency?: 'EUR' | 'DZD';
   status: ShipmentStatus;
   dateCreated: string;
   estimatedDelivery: string;
@@ -64,6 +66,9 @@ export interface Route {
   date: string;
   status: 'Planned' | 'Active' | 'Completed';
   teamId?: string; // Assigned team, if applicable
+  actualDistance?: number;
+  actualDuration?: number;
+  fuelConsumed?: number;
 }
 
 export interface Invoice {
@@ -97,6 +102,8 @@ export interface Incident {
   date: string;
   resolved: boolean;
   relatedEntityId?: string; // Could be shipment or route ID
+  photo?: string;
+  attachment?: string;
 }
 
 export interface Complaint {

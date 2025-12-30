@@ -22,9 +22,15 @@ const Account: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      const parts = user.username.split(' ');
-      setFirstName(parts[0] || '');
-      setLastName(parts.slice(1).join(' ') || '');
+      // Use first_name/last_name if available, otherwise fall back to parsing username
+      if (user.first_name) {
+        setFirstName(user.first_name);
+        setLastName(user.last_name || '');
+      } else {
+        const parts = user.username.split(' ');
+        setFirstName(parts[0] || '');
+        setLastName(parts.slice(1).join(' ') || '');
+      }
       setRole(user.role || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
@@ -49,7 +55,7 @@ const Account: React.FC = () => {
 
   const validateEmail = (e: string) => /\S+@\S+\.\S+/.test(e);
 
-  const onSave = () => {
+  const onSave = async () => {
     if (!firstName.trim()) {
       addToast('error', 'First name is required');
       return;
@@ -59,27 +65,29 @@ const Account: React.FC = () => {
       return;
     }
 
-    const newName = `${firstName.trim()}${lastName ? ' ' + lastName.trim() : ''}`;
     const updates: any = {
-      name: newName,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
       email: email.trim(),
-      role: role.trim(),
       phone: phone.trim(),
       bio: bio.trim(),
     };
-    if (avatar) updates.avatar = avatar;
 
-    updateProfile(updates);
+    const success = await updateProfile(updates);
 
-    // add to recent activity
-    try {
-      const entries = JSON.parse(localStorage.getItem('evworld_activity') || '[]');
-      entries.unshift({ id: Date.now(), text: 'Profile updated', time: new Date().toISOString() });
-      localStorage.setItem('evworld_activity', JSON.stringify(entries.slice(0, 20)));
-    } catch (e) { }
+    if (success) {
+      // add to recent activity
+      try {
+        const entries = JSON.parse(localStorage.getItem('routemind_activity') || '[]');
+        entries.unshift({ id: Date.now(), text: 'Profile updated', time: new Date().toISOString() });
+        localStorage.setItem('routemind_activity', JSON.stringify(entries.slice(0, 20)));
+      } catch (e) { }
 
-    addToast('success', 'Profile updated');
-    setEditing(false);
+      addToast('success', 'Profile updated successfully');
+      setEditing(false);
+    } else {
+      addToast('error', 'Failed to update profile. Please try again.');
+    }
   };
 
   const onCancel = () => {
@@ -108,7 +116,7 @@ const Account: React.FC = () => {
 
   const recentActivity = (() => {
     try {
-      return JSON.parse(localStorage.getItem('evworld_activity') || '[]');
+      return JSON.parse(localStorage.getItem('routemind_activity') || '[]');
     } catch (e) { return []; }
   })();
 
@@ -167,10 +175,7 @@ const Account: React.FC = () => {
                 <label className="block text-sm text-slate-500 mb-1">Last Name</label>
                 <input value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={!editing} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white focus:border-lime-400 outline-none transition-colors" />
               </div>
-              <div>
-                <label className="block text-sm text-slate-500 mb-1">Job Title</label>
-                <input value={role} onChange={(e) => setRole(e.target.value)} disabled={!editing} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white focus:border-lime-400 outline-none transition-colors" />
-              </div>
+
               <div>
                 <label className="block text-sm text-slate-500 mb-1">Phone</label>
                 <input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={!editing} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white focus:border-lime-400 outline-none transition-colors" />

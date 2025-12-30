@@ -12,7 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'name', 'email', 'role', 'phone', 'address', 'balance']
+        fields = ['id', 'username', 'name', 'email', 'role', 'phone', 'address', 'balance', 'first_name', 'last_name', 'bio']
+        read_only_fields = ['id', 'balance']  # balance should not be editable via profile
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = User.EMAIL_FIELD
