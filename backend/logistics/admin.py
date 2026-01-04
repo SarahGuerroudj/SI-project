@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Destination, ServiceType, Shipment, Route
+from .models import Destination, ServiceType, Shipment, Route, PricingRule
 
 @admin.register(Destination)
 class DestinationAdmin(admin.ModelAdmin):
@@ -26,3 +26,9 @@ class RouteAdmin(admin.ModelAdmin):
     list_filter = ('status', 'date')
     search_fields = ('driver__user__username', 'vehicle__plate')
     date_hierarchy = 'date'
+
+@admin.register(PricingRule)
+class PricingRuleAdmin(admin.ModelAdmin):
+    list_display = ('service_type', 'destination', 'base_price', 'is_active')
+    list_filter = ('service_type', 'is_active')
+    search_fields = ('destination__name', 'destination__city', 'service_type__name')

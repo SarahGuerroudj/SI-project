@@ -1,0 +1,669 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{tocloft}
+
+\geometry{margin=2.5cm}
+
+% Colors
+\definecolor{primarycolor}{RGB}{132, 204, 22} % Lime green
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Code styling
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Header and Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{RouteMind}
+\fancyfoot[C]{\thepage}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primarycolor,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+% ==============================================================================
+% DOCUMENT BEGIN
+% ==============================================================================
+\begin{document}
+
+% ==============================================================================
+% PAGE DE GARDE
+% ==============================================================================
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries RouteMind\par}
+    \vspace{0.5cm}
+    {\Large\itshape Plateforme de Gestion Logistique Intelligente\par}
+    
+    \vspace{2cm}
+    
+    \includegraphics[width=0.3\textwidth]{logo.png} % Remplacez par votre logo
+    
+    \vspace{2cm}
+    
+    {\Large\bfseries Rapport de Projet\par}
+    \vspace{0.5cm}
+    {\large Système d'Information\par}
+    
+    \vspace{2cm}
+    
+    {\large\bfseries Membres de l'équipe :\par}
+    \vspace{0.5cm}
+    {\large
+        ALOUACHE Houria\\
+        BECIS Souad\\
+        GUERROUDJ Sarah\\
+        HADDAD Nour El Houda\\
+    }
+    
+    \vfill
+    
+    {\large Date : 17 Janvier 2026\par}
+    
+    \vspace{1cm}
+    
+    {\large Université USTHB\par}
+    {\large Département d'Informatique\par}
+    
+\end{titlepage}
+
+% ==============================================================================
+% TABLE DES MATIÈRES
+% ==============================================================================
+\tableofcontents
+\newpage
+
+% ==============================================================================
+% INTRODUCTION
+% ==============================================================================
+\chapter{Introduction}
+
+\section{Présentation du Projet}
+
+RouteMind est une plateforme moderne de gestion logistique conçue pour autonomiser les petites et moyennes entreprises avec des insights basés sur l'intelligence artificielle, un suivi en temps réel et des workflows automatisés.
+
+Le système offre une solution complète pour la gestion des expéditions, la planification des itinéraires, le suivi de la flotte de véhicules et la facturation, le tout intégré dans une interface utilisateur intuitive et moderne.
+
+\section{Objectifs du Système}
+
+Les objectifs principaux de RouteMind sont :
+
+\begin{itemize}
+    \item \textbf{Gestion des Expéditions} : Permettre la création, le suivi et la gestion complète des expéditions depuis leur origine jusqu'à leur destination finale.
+    
+    \item \textbf{Optimisation des Itinéraires} : Utiliser l'intelligence artificielle pour recommander les itinéraires les plus efficaces en termes de temps et de coût.
+    
+    \item \textbf{Gestion de la Flotte} : Fournir un suivi en temps réel des véhicules et des chauffeurs, incluant la gestion des incidents.
+    
+    \item \textbf{Facturation Automatisée} : Générer automatiquement les factures basées sur les services rendus et les distances parcourues.
+    
+    \item \textbf{Analytics et Rapports} : Offrir des tableaux de bord avec des indicateurs clés de performance (KPI) et des prévisions basées sur l'IA.
+    
+    \item \textbf{Interface Utilisateur Moderne} : Proposer une expérience utilisateur fluide et responsive accessible depuis n'importe quel appareil.
+\end{itemize}
+
+\section{Contexte et Motivation}
+
+Dans le contexte actuel de la logistique, les entreprises font face à plusieurs défis :
+\begin{itemize}
+    \item Augmentation des coûts de transport
+    \item Demande croissante de livraisons rapides
+    \item Nécessité d'optimiser les ressources
+    \item Besoin de visibilité en temps réel
+\end{itemize}
+
+RouteMind répond à ces défis en proposant une solution tout-en-un qui combine gestion opérationnelle et intelligence artificielle.
+
+% ==============================================================================
+% ANALYSE DU SYSTÈME
+% ==============================================================================
+\chapter{Analyse du Système}
+
+\section{Analyse des Besoins}
+
+\subsection{Besoins Fonctionnels}
+
+\begin{enumerate}
+    \item \textbf{Gestion des Utilisateurs}
+    \begin{itemize}
+        \item Authentification sécurisée (JWT)
+        \item Gestion des rôles (Admin, Manager, Client, Driver)
+        \item Profils utilisateur personnalisables
+    \end{itemize}
+    
+    \item \textbf{Gestion des Expéditions}
+    \begin{itemize}
+        \item Création et modification des expéditions
+        \item Suivi du statut (Pending, In Transit, Delivered, Cancelled, Delayed)
+        \item Historique des mises à jour
+        \item Calcul automatique des prix
+    \end{itemize}
+    
+    \item \textbf{Gestion de la Flotte}
+    \begin{itemize}
+        \item Enregistrement des véhicules
+        \item Gestion des chauffeurs
+        \item Suivi des incidents
+        \item Planification de la maintenance
+    \end{itemize}
+    
+    \item \textbf{Gestion des Itinéraires}
+    \begin{itemize}
+        \item Planification des routes
+        \item Affectation des chauffeurs et véhicules
+        \item Suivi de la consommation de carburant
+    \end{itemize}
+    
+    \item \textbf{Facturation}
+    \begin{itemize}
+        \item Génération automatique des factures
+        \item Gestion des paiements
+        \item Export PDF
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Besoins Non-Fonctionnels}
+
+\begin{itemize}
+    \item \textbf{Performance} : Temps de réponse inférieur à 2 secondes
+    \item \textbf{Sécurité} : Authentification JWT, HTTPS, protection CSRF
+    \item \textbf{Disponibilité} : Système disponible 24/7
+    \item \textbf{Scalabilité} : Architecture modulaire permettant l'extension
+    \item \textbf{Responsive} : Interface adaptée à tous les écrans
+\end{itemize}
+
+\section{Diagrammes UML}
+
+\subsection{Diagramme de Cas d'Utilisation}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    % System boundary
+    \draw[thick] (0,0) rectangle (10,12);
+    \node at (5,11.5) {\textbf{RouteMind System}};
+    
+    % Actors
+    \node[draw, ellipse] (admin) at (-2,10) {Admin};
+    \node[draw, ellipse] (manager) at (-2,7) {Manager};
+    \node[draw, ellipse] (client) at (-2,4) {Client};
+    \node[draw, ellipse] (driver) at (-2,1) {Driver};
+    
+    % Use cases
+    \node[draw, ellipse, align=center] (uc1) at (5,10) {Gérer\\Utilisateurs};
+    \node[draw, ellipse, align=center] (uc2) at (5,8) {Gérer\\Expéditions};
+    \node[draw, ellipse, align=center] (uc3) at (5,6) {Gérer\\Flotte};
+    \node[draw, ellipse, align=center] (uc4) at (5,4) {Suivre\\Expédition};
+    \node[draw, ellipse, align=center] (uc5) at (5,2) {Mettre à jour\\Statut};
+    
+    % Connections
+    \draw (admin) -- (uc1);
+    \draw (admin) -- (uc2);
+    \draw (admin) -- (uc3);
+    \draw (manager) -- (uc2);
+    \draw (manager) -- (uc3);
+    \draw (client) -- (uc4);
+    \draw (client) -- (uc2);
+    \draw (driver) -- (uc5);
+    \draw (driver) -- (uc4);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Diagramme de Classes}
+
+Le système est organisé en plusieurs modules :
+
+\textbf{Module Users :}
+\begin{itemize}
+    \item \texttt{User} : Hérite de AbstractUser (Django)
+    \begin{itemize}
+        \item Attributs : role, phone, address, balance, bio
+        \item Relations : OneToMany avec Shipment, Driver
+    \end{itemize}
+\end{itemize}
+
+\textbf{Module Logistics :}
+\begin{itemize}
+    \item \texttt{Destination} : Représente les destinations
+    \begin{itemize}
+        \item Attributs : name, country, city, delivery\_zone, distance\_km, type, is\_active
+    \end{itemize}
+    
+    \item \texttt{ServiceType} : Types de services proposés
+    \begin{itemize}
+        \item Attributs : name, description, category, base\_price, price\_per\_km, estimated\_delivery\_time
+    \end{itemize}
+    
+    \item \texttt{Shipment} : Gestion des expéditions
+    \begin{itemize}
+        \item Attributs : weight\_kg, volume\_m3, price, status, created\_at, estimated\_delivery, history
+        \item Relations : ManyToOne avec Client, Destination
+    \end{itemize}
+    
+    \item \texttt{Route} : Planification des itinéraires
+    \begin{itemize}
+        \item Attributs : date, actual\_distance\_km, actual\_duration\_hours, fuel\_consumed\_liters, status
+        \item Relations : ManyToOne avec Driver, Vehicle; ManyToMany avec Shipment
+    \end{itemize}
+\end{itemize}
+
+\textbf{Module Fleet :}
+\begin{itemize}
+    \item \texttt{Vehicle} : Gestion des véhicules
+    \begin{itemize}
+        \item Attributs : plate, model, capacity\_kg, status
+    \end{itemize}
+    
+    \item \texttt{Driver} : Profils chauffeurs
+    \begin{itemize}
+        \item Attributs : license\_number, status
+        \item Relations : OneToOne avec User
+    \end{itemize}
+    
+    \item \texttt{Incident} : Suivi des incidents
+    \begin{itemize}
+        \item Attributs : type, description, date, photo, attachment, resolved
+        \item Relations : ManyToOne avec Driver, Vehicle
+    \end{itemize}
+\end{itemize}
+
+\subsection{Diagramme de Séquence - Création d'Expédition}
+
+\begin{enumerate}
+    \item L'utilisateur (Client/Admin) remplit le formulaire de création
+    \item Le Frontend envoie une requête POST à \texttt{/api/v1/shipments/}
+    \item Le Backend valide les données via le Serializer
+    \item Le Backend crée l'enregistrement en base de données
+    \item Le Backend retourne la réponse avec l'expédition créée
+    \item Le Frontend met à jour l'interface utilisateur
+    \item Une notification est affichée à l'utilisateur
+\end{enumerate}
+
+% ==============================================================================
+% CONCEPTION DU SYSTÈME
+% ==============================================================================
+\chapter{Conception du Système}
+
+\section{Architecture du Système}
+
+RouteMind utilise une architecture \textbf{Client-Serveur} moderne avec séparation complète entre le frontend et le backend :
+
+\begin{center}
+\begin{tikzpicture}[node distance=2cm]
+    % Frontend
+    \node[draw, rectangle, minimum width=4cm, minimum height=1.5cm, fill=blue!20] (frontend) at (0,4) {Frontend (React)};
+    
+    % Backend
+    \node[draw, rectangle, minimum width=4cm, minimum height=1.5cm, fill=green!20] (backend) at (0,1.5) {Backend (Django REST)};
+    
+    % Database
+    \node[draw, cylinder, shape border rotate=90, aspect=0.3, minimum height=1.5cm, minimum width=2cm, fill=orange!20] (db) at (0,-1) {SQLite/PostgreSQL};
+    
+    % External Services
+    \node[draw, rectangle, minimum width=3cm, minimum height=1cm, fill=purple!20] (ai) at (5,4) {Google Gemini AI};
+    
+    % Arrows
+    \draw[->, thick] (frontend) -- node[right] {REST API} (backend);
+    \draw[->, thick] (backend) -- (db);
+    \draw[->, thick] (frontend) -- (ai);
+    
+\end{tikzpicture}
+\end{center}
+
+\section{Technologies Utilisées}
+
+\subsection{Frontend}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Technologie} & \textbf{Utilisation} \\
+\hline
+React 18 & Bibliothèque UI principale \\
+\hline
+TypeScript & Typage statique pour JavaScript \\
+\hline
+Vite & Build tool et serveur de développement \\
+\hline
+Tailwind CSS & Framework CSS utility-first \\
+\hline
+React Query & Gestion du cache et des requêtes API \\
+\hline
+React Router & Navigation côté client \\
+\hline
+Lucide React & Bibliothèque d'icônes \\
+\hline
+Axios & Client HTTP \\
+\hline
+\end{tabularx}
+
+\subsection{Backend}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Technologie} & \textbf{Utilisation} \\
+\hline
+Python 3.10+ & Langage de programmation \\
+\hline
+Django 4.x & Framework web \\
+\hline
+Django REST Framework & API REST \\
+\hline
+Simple JWT & Authentification par tokens \\
+\hline
+SQLite & Base de données (développement) \\
+\hline
+PostgreSQL & Base de données (production) \\
+\hline
+\end{tabularx}
+
+\subsection{Intégration IA}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Technologie} & \textbf{Utilisation} \\
+\hline
+Google Gemini API & Assistant IA conversationnel \\
+\hline
+\end{tabularx}
+
+\section{Structure du Projet}
+
+\begin{lstlisting}[language=bash, caption=Structure des dossiers]
+RouteMind/
+├── backend/
+│   ├── config/           # Configuration Django
+│   ├── users/            # Module utilisateurs
+│   ├── logistics/        # Module logistique
+│   ├── fleet/            # Module flotte
+│   ├── billing/          # Module facturation
+│   ├── support/          # Module support
+│   ├── manage.py
+│   └── requirements.txt
+├── frontend/
+│   ├── components/       # Composants React
+│   ├── contexts/         # Context providers
+│   ├── api/              # Client API
+│   ├── services/         # Services utilitaires
+│   └── package.json
+└── README.md
+\end{lstlisting}
+
+\section{Endpoints API Principaux}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+POST & /api/v1/token/ & Authentification \\
+\hline
+POST & /api/v1/register/ & Inscription \\
+\hline
+GET/PATCH & /api/v1/users/me/ & Profil utilisateur \\
+\hline
+CRUD & /api/v1/shipments/ & Gestion expéditions \\
+\hline
+CRUD & /api/v1/destinations/ & Gestion destinations \\
+\hline
+CRUD & /api/v1/vehicles/ & Gestion véhicules \\
+\hline
+CRUD & /api/v1/drivers/ & Gestion chauffeurs \\
+\hline
+CRUD & /api/v1/routes/ & Gestion itinéraires \\
+\hline
+CRUD & /api/v1/invoices/ & Gestion factures \\
+\hline
+\end{tabularx}
+
+% ==============================================================================
+% GESTION DE QUALITÉ
+% ==============================================================================
+\chapter{Gestion de Qualité}
+
+\section{Méthodes de Test}
+
+\subsection{Tests Unitaires}
+\begin{itemize}
+    \item Tests des modèles Django avec \texttt{pytest}
+    \item Tests des serializers
+    \item Tests des vues API
+\end{itemize}
+
+\subsection{Tests d'Intégration}
+\begin{itemize}
+    \item Tests des endpoints API complets
+    \item Tests de l'authentification JWT
+    \item Tests des permissions par rôle
+\end{itemize}
+
+\subsection{Tests Frontend}
+\begin{itemize}
+    \item Tests des composants avec React Testing Library
+    \item Tests de navigation
+    \item Tests d'intégration avec le backend
+\end{itemize}
+
+\section{Stratégies d'Assurance Qualité}
+
+\subsection{Revue de Code}
+\begin{itemize}
+    \item Pull Requests obligatoires
+    \item Review par au moins un membre de l'équipe
+    \item Vérification des conventions de code
+\end{itemize}
+
+\subsection{Intégration Continue}
+\begin{itemize}
+    \item GitHub Actions pour l'automatisation
+    \item Exécution des tests à chaque push
+    \item Vérification du linting (ESLint, Pylint)
+\end{itemize}
+
+\subsection{Standards de Code}
+\begin{itemize}
+    \item ESLint pour le code TypeScript/JavaScript
+    \item Black/Flake8 pour le code Python
+    \item Prettier pour le formatage
+    \item Commits conventionnels
+\end{itemize}
+
+\subsection{Documentation}
+\begin{itemize}
+    \item README détaillé pour le setup
+    \item Commentaires dans le code
+    \item Documentation API (DRF auto-generated)
+\end{itemize}
+
+% ==============================================================================
+% DISTRIBUTION DES TÂCHES
+% ==============================================================================
+\chapter{Distribution des Tâches}
+
+\section{Organisation de l'Équipe}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Membre} & \textbf{Rôle} & \textbf{Responsabilités} \\
+\hline
+ALOUACHE Houria & Développeur Frontend & 
+- Développement des composants React \newline
+- Intégration avec l'API \newline
+- Design UI/UX \newline
+- Tests frontend \\
+\hline
+BECIS Souad & Développeur Backend & 
+- Conception des modèles Django \newline
+- Développement des API REST \newline
+- Authentification et sécurité \newline
+- Optimisation base de données \\
+\hline
+GUERROUDJ Sarah & Analyste \& Documentation & 
+- Analyse des besoins \newline
+- Diagrammes UML \newline
+- Documentation technique \newline
+- Rédaction du rapport \\
+\hline
+HADDAD Nour El Houda & Test \& Qualité & 
+- Écriture des tests \newline
+- Revue de code \newline
+- Assurance qualité \newline
+- Déploiement \\
+\hline
+\end{tabularx}
+
+\section{Planning du Projet}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Phase} & \textbf{Durée} & \textbf{Livrables} \\
+\hline
+Analyse & 1 semaine & Document d'analyse, diagrammes UML \\
+\hline
+Conception & 1 semaine & Architecture, maquettes, schéma BDD \\
+\hline
+Développement & 4 semaines & Code source fonctionnel \\
+\hline
+Tests & 1 semaine & Rapport de tests, corrections \\
+\hline
+Documentation & 1 semaine & Rapport final, manuel utilisateur \\
+\hline
+\end{tabularx}
+
+% ==============================================================================
+% CONCLUSION
+% ==============================================================================
+\chapter{Conclusion}
+
+\section{Résumé des Résultats}
+
+Le projet RouteMind a permis de développer une plateforme complète de gestion logistique intégrant :
+
+\begin{itemize}
+    \item Un système d'authentification sécurisé avec gestion des rôles
+    \item Une interface utilisateur moderne et responsive
+    \item Une API REST complète pour toutes les opérations
+    \item Un assistant IA pour l'aide à la décision
+    \item Un système de facturation automatisé
+    \item Un suivi en temps réel des expéditions et de la flotte
+\end{itemize}
+
+Le système répond aux besoins identifiés lors de l'analyse et offre une solution évolutive pour les entreprises de logistique.
+
+\section{Difficultés Rencontrées}
+
+\begin{itemize}
+    \item Gestion de l'authentification JWT et du refresh token
+    \item Synchronisation des données entre frontend et backend
+    \item Optimisation des performances pour les grandes quantités de données
+    \item Configuration de l'environnement de développement multi-plateforme
+\end{itemize}
+
+\section{Perspectives d'Amélioration}
+
+\begin{enumerate}
+    \item \textbf{Tracking GPS en temps réel} : Intégration de la géolocalisation des véhicules
+    
+    \item \textbf{Application mobile} : Développement d'une app React Native pour les chauffeurs
+    
+    \item \textbf{Optimisation IA avancée} : Algorithmes de machine learning pour la prédiction des délais
+    
+    \item \textbf{Notifications push} : Alertes en temps réel pour les mises à jour d'expédition
+    
+    \item \textbf{Intégration ERP} : Connexion avec les systèmes existants des entreprises
+    
+    \item \textbf{Multi-tenancy} : Support de plusieurs entreprises sur une même instance
+    
+    \item \textbf{Analytics avancés} : Tableaux de bord personnalisables avec plus de KPIs
+\end{enumerate}
+
+% ==============================================================================
+% ANNEXES
+% ==============================================================================
+\appendix
+\chapter{Annexes}
+
+\section{Lien vers le Dépôt de Code}
+
+Le code source complet du projet est disponible sur GitHub :
+
+\begin{center}
+\url{https://github.com/votre-username/routemind}
+\end{center}
+
+\section{Guide d'Installation}
+
+\subsection{Prérequis}
+\begin{itemize}
+    \item Python 3.10+
+    \item Node.js 18+
+    \item npm
+\end{itemize}
+
+\subsection{Installation Backend}
+\begin{lstlisting}[language=bash]
+cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+\end{lstlisting}
+
+\subsection{Installation Frontend}
+\begin{lstlisting}[language=bash]
+cd frontend
+npm install
+npm run dev
+\end{lstlisting}
+
+\section{Captures d'Écran}
+
+% Ajoutez vos captures d'écran ici
+% \includegraphics[width=\textwidth]{screenshot1.png}
+
+\section{Références}
+
+\begin{itemize}
+    \item Django Documentation : \url{https://docs.djangoproject.com/}
+    \item Django REST Framework : \url{https://www.django-rest-framework.org/}
+    \item React Documentation : \url{https://react.dev/}
+    \item Tailwind CSS : \url{https://tailwindcss.com/}
+    \item Google Gemini API : \url{https://ai.google.dev/}
+\end{itemize}
+
+\end{document}

@@ -5,7 +5,7 @@ import Modal from './shared/Modal';
 import DriverForm from './drivers/DriverForm';
 import { useData } from '../contexts/DataContext';
 import { Driver } from '../types';
-import { Plus, Users, Truck, User } from 'lucide-react';
+import { Plus, Users, Truck, User, Tag, DollarSign } from 'lucide-react';
 
 const ResourcesPage: React.FC = () => {
   const { getItems, addItem, updateItem, deleteItem } = useData();
@@ -104,7 +104,7 @@ const ResourcesPage: React.FC = () => {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Link
           to="/clients"
           className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-800 hover:border-lime-500 dark:hover:border-lime-500 transition-colors"
@@ -128,6 +128,32 @@ const ResourcesPage: React.FC = () => {
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage vehicle fleet</p>
             </div>
             <Truck className="text-slate-400 dark:text-slate-500" size={24} />
+          </div>
+        </Link>
+
+        <Link
+          to="/service-types"
+          className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-800 hover:border-lime-500 dark:hover:border-lime-500 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Service Types</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Standard, Express, International</p>
+            </div>
+            <Tag className="text-slate-400 dark:text-slate-500" size={24} />
+          </div>
+        </Link>
+
+        <Link
+          to="/pricing"
+          className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-800 hover:border-lime-500 dark:hover:border-lime-500 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Pricing</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Service + destination pricing</p>
+            </div>
+            <DollarSign className="text-slate-400 dark:text-slate-500" size={24} />
           </div>
         </Link>
       </div>

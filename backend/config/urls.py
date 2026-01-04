@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from users.views import UserViewSet
-from logistics.views import DestinationViewSet, ServiceTypeViewSet, ShipmentViewSet, RouteViewSet
+from logistics.views import DestinationViewSet, ServiceTypeViewSet, ShipmentViewSet, RouteViewSet, PricingRuleViewSet
 from fleet.views import VehicleViewSet, DriverViewSet, IncidentViewSet
 from billing.views import InvoiceViewSet, PaymentRecordViewSet
 from support.views import ComplaintViewSet
@@ -24,6 +24,7 @@ router.register(r'incidents', IncidentViewSet)
 router.register(r'invoices', InvoiceViewSet)
 router.register(r'payments', PaymentRecordViewSet)
 router.register(r'complaints', ComplaintViewSet)
+router.register(r'pricing-rules', PricingRuleViewSet)
 
 from django.http import JsonResponse
 

@@ -41,7 +41,7 @@ const statusBadge: Record<ServiceType['status'], string> = {
 
 const ServiceTypesPage: React.FC = () => {
   const { getItems, addItem, updateItem, deleteItem } = useData();
-  const serviceTypes = getItems<ServiceType>('serviceTypes');
+  const serviceTypes = getItems<ServiceType>('serviceTypes') || [];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | ServiceType['category']>('all');
@@ -352,7 +352,7 @@ const ServiceTypesPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[11px] text-slate-600 dark:text-slate-200">
-                      {service.requirements.length ? service.requirements.join(', ') : '—'}
+                      {service.requirements?.length ? service.requirements.join(', ') : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -489,7 +489,7 @@ const ServiceTypesPage: React.FC = () => {
                     Requirements
                   </p>
                   <p className="text-sm">
-                    {selectedService.requirements.length ? selectedService.requirements.join(', ') : '—'}
+                    {selectedService.requirements?.length ? selectedService.requirements.join(', ') : '—'}
                   </p>
                 </div>
                 <div>

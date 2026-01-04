@@ -149,24 +149,10 @@ export interface DestinationRate {
 export interface PricingRule {
   id: string;
   serviceTypeId: string;
-  zone: string;
-  region: string;
+  destinationId: string;
   basePrice: number;
   pricePerKm?: number;
-  extraFees: {
-    fragile?: number;
-    heavy?: number;
-    cod?: number;
-    night?: number;
-  };
-  minimumCharge: number;
-  maximumWeightKg: number;
-  estimatedTimeRange: string;
-  status: 'Active' | 'Inactive';
-  urgency: 'Economy' | 'Standard' | 'Express' | 'Critical';
-  vehicleTypes: string[];
-  conditions?: string;
-  conflictsWith?: string[]; // IDs of rules this one overlaps with
+  isActive: boolean;
 }
 
 export type DestinationType = 'Stock Warehouse' | 'Main Hub' | 'Checkpoint' | 'Regular';

@@ -13,7 +13,8 @@ import {
     Box,
     Clock,
     FileText,
-    Star
+    Star,
+    Tag
 } from 'lucide-react';
 import { NavItem } from '../types/navigation';
 
@@ -32,6 +33,7 @@ export const defaultResourceItems: NavItem[] = [
     { id: 'clients', name: 'Clients', icon: <Users size={18} />, path: '/clients' },
     { id: 'drivers', name: 'Drivers', icon: <Users size={18} />, path: '/drivers' },
     { id: 'fleet', name: 'Fleet', icon: <Truck size={18} />, path: '/fleet' },
+    { id: 'service-types', name: 'Service Types', icon: <Tag size={18} />, path: '/service-types' },
     { id: 'destinations', name: 'Destinations', icon: <Navigation size={18} />, path: '/destinations' },
     { id: 'pricing', name: 'Pricing', icon: <DollarSign size={18} />, path: '/pricing' },
 ];
