@@ -44,16 +44,31 @@ INSTALLED_APPS = [
     
     # Local apps
     'users',
-    'logistics',
-    'fleet',
+    'destinations',
+    'service_types',
+    'shipments',
+    'routes',
+    'pricing',
+    'clients',
+    'vehicles',
+    'drivers',
+    'incidents',
+    'complaints',
     'billing',
-    'support',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    # ZERO TRUST: Deny by default - all endpoints MUST explicitly define permissions
+    'DEFAULT_PERMISSION_CLASSES': (
+        'users.permissions.DenyByDefault',
+    ),
+    # Custom exception handler for secure 403 responses
+    'EXCEPTION_HANDLER': 'users.exception_handlers.custom_exception_handler',
+    # Don't leak information about non-existent resources
+    'NON_FIELD_ERRORS_KEY': 'detail',
 }
 
 MIDDLEWARE = [

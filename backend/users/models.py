@@ -18,3 +18,7 @@ class User(AbstractUser):
     
     def __str__(self):
         return f"{self.username} ({self.role})"
+
+
+# Import audit model to register it
+from .audit import AuditLog, get_client_ip

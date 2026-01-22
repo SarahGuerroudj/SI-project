@@ -24,17 +24,42 @@ function persist(entry: AuditEntry) {
 }
 
 export const auditLog = {
-  log: (action: string, level: AuditLevel = 'info', userId?: string | null, details?: Record<string, any>) => {
+  log: async (action: string, level: AuditLevel = 'info', userId?: string | null, details?: Record<string, any>) => {
     const entry: AuditEntry = { id: Math.random().toString(36).slice(2, 9), time: nowISO(), userId: userId ?? null, action, level, details };
+
+    // Severity mapping
+    const severityMap: Record<AuditLevel, 'low' | 'medium' | 'high' | 'critical'> = {
+      'info': 'low',
+      'warning': 'medium',
+      'error': 'high',
+      'security': 'critical'
+    };
+
+    // Persist locally
+    persist(entry);
+
+    // Sync to backend
+    try {
+      const { default: apiClient } = await import('../api/client');
+      const { ENDPOINTS } = await import('../api/endpoints');
+      await apiClient.post(ENDPOINTS.AUDIT_LOGS || '/api/v1/audit-logs/', {
+        action: action,
+        severity: severityMap[level],
+        resource_type: details?.resource_type || 'UI_Event',
+        resource_id: details?.resource_id || '',
+        details: details || {}
+      });
+    } catch (e) {
+      // Fail silently for audit logs to not block main UI
+      console.error('Failed to sync audit log to backend', e);
+    }
+
     // Console output for developer visibility
     if (level === 'security' || level === 'error') {
-      // eslint-disable-next-line no-console
       console.warn('[AUDIT]', entry);
     } else {
-      // eslint-disable-next-line no-console
       console.info('[AUDIT]', entry);
     }
-    persist(entry);
   },
 
   getRecent: (limit = 50) => {

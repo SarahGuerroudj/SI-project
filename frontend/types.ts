@@ -73,6 +73,7 @@ export interface Route {
 
 export interface Invoice {
   id: string;
+  invoiceNumber?: string;
   clientId: string;
   shipmentIds: string[];
   amountHT: number;
@@ -101,7 +102,7 @@ export interface Incident {
   description: string;
   date: string;
   resolved: boolean;
-  relatedEntityId?: string; // Could be shipment or route ID
+  related_entity_id?: string; // Could be shipment or route ID
   photo?: string;
   attachment?: string;
 }
@@ -130,8 +131,9 @@ export interface ServiceType {
   basePrice: number;
   pricePerKm?: number;
   estimatedDeliveryTime: string;
-  requirements: string[];
-  status: 'Active' | 'Inactive';
+  isActive?: boolean;
+  status?: 'Active' | 'Inactive';
+  requirements?: string[];
   pricingModel?: 'Flat' | 'Distance-based' | 'Tiered';
   additionalFees?: number;
   allowedPackageSizes?: string[];
@@ -167,10 +169,12 @@ export interface DestinationRecord {
   deliveryZone: string;
   distanceKm: number;
   type: DestinationType;
+  destinationType?: 'Domestic' | 'International';
   packagesCapacity?: number;
   availableSpace?: number;
   activeDeliveries: number;
   status: DestinationStatus;
+  isActive?: boolean;
   mapPin: string;
   contact: string;
   serviceArea: string;

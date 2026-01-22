@@ -1,4 +1,4 @@
-import { Shipment, Invoice, Client, ShipmentStatus, DestinationRate, Team, PaymentRecord } from '../types';
+import { Shipment, Invoice, Client, ShipmentStatus, DestinationRate, PaymentRecord } from '../types';
 import { MOCK_DESTINATION_RATES } from '../constants';
 
 /**

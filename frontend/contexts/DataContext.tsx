@@ -2,19 +2,22 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
-import { Client, Driver, Vehicle, DestinationRate, ServiceType, DestinationRecord, PricingRule } from '../types';
+import auditLog from '../services/auditLog';
+import {
+  Client, Driver, Vehicle, DestinationRate, ServiceType, DestinationRecord, PricingRule,
+  Shipment, Route, Invoice, PaymentRecord, Incident, Complaint
+} from '../types';
 
 interface Identifiable {
   id: string;
 }
 
-type Entity = Client | Driver | Vehicle | DestinationRate | ServiceType | DestinationRecord | PricingRule;
+type Entity = Client | Driver | Vehicle | DestinationRate | ServiceType | DestinationRecord | PricingRule | Shipment | Route | Invoice | PaymentRecord | Incident | Complaint;
 type EntityType =
   | 'clients'
   | 'drivers'
   | 'vehicles'
   | 'shipments'
-  | 'destinations'
   | 'destinations'
   | 'serviceTypes'
   | 'pricing'
@@ -89,12 +92,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           clientName: s.client_details?.first_name || s.client_details?.username || 'Unknown',
           destinationId: s.destination,
           destination: s.destination_details?.name || 'Unknown',
-          weight: s.weight_kg,
-          volume: s.volume_m3,
+          weight: s.weight,
+          volume: s.volume,
           price: parseFloat(s.price),
           status: s.status,
-          dateCreated: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          estimatedDelivery: s.estimated_delivery?.split('T')[0] || '',
+          dateCreated: s.dateCreated?.split('T')[0] || new Date().toISOString().split('T')[0],
+          estimatedDelivery: s.estimatedDelivery?.split('T')[0] || '',
           history: s.history || [],
           isLocked: s.status !== 'Pending', // Simple logic for now
         }));
@@ -188,30 +191,63 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }));
       }
     }),
-    serviceTypes: useQuery({ queryKey: ['serviceTypes'], queryFn: () => apiClient.get(ENDPOINTS.SERVICE_TYPES).then(res => res.data) }),
-    pricing: useQuery({ queryKey: ['pricing'], queryFn: () => [] }), // Pricing API not implemented yet
+    serviceTypes: useQuery({
+      queryKey: ['serviceTypes'],
+      queryFn: async () => {
+        const res = await apiClient.get(ENDPOINTS.SERVICE_TYPES);
+        return res.data.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+          category: s.category,
+          basePrice: parseFloat(s.basePrice || s.base_price || 0),
+          pricePerKm: (s.pricePerKm || s.price_per_km) ? parseFloat(s.pricePerKm || s.price_per_km) : undefined,
+          estimatedDeliveryTime: s.estimatedDeliveryTime || s.estimated_delivery_time || '',
+          isActive: s.isActive !== undefined ? s.isActive : s.is_active,
+          requirements: s.requirements || [],
+          pricingModel: s.pricingModel || s.pricing_model,
+          additionalFees: (s.additionalFees || s.additional_fees) ? parseFloat(s.additionalFees || s.additional_fees) : 0,
+          allowedPackageSizes: s.allowedPackageSizes || s.allowed_package_sizes || [],
+          driverNotes: s.driverNotes || s.driver_notes
+        }));
+      }
+    }),
+    pricing: useQuery({
+      queryKey: ['pricing'],
+      queryFn: async () => {
+        const res = await apiClient.get(ENDPOINTS.PRICING_RULES);
+        return res.data.map((p: any) => ({
+          id: p.id,
+          serviceTypeId: p.serviceTypeId,
+          destinationId: p.destinationId,
+          basePrice: parseFloat(p.basePrice || p.base_price || 0),
+          pricePerKm: (p.pricePerKm || p.price_per_km) ? parseFloat(p.pricePerKm || p.price_per_km) : undefined,
+          isActive: p.isActive !== undefined ? p.isActive : p.is_active
+        }));
+      }
+    }),
     destinationRecords: useQuery({
       queryKey: ['destinationRecords'],
       queryFn: async () => {
         const res = await apiClient.get(ENDPOINTS.DESTINATIONS);
-        // Map backend snake_case to frontend camelCase
         return res.data.map((d: any) => ({
           id: d.id,
           name: d.name,
           country: d.country,
           city: d.city,
-          deliveryZone: d.delivery_zone,
-          distanceKm: d.distance_km,
+          deliveryZone: d.deliveryZone || d.delivery_zone,
+          distanceKm: d.distanceKm || d.distance_km || 0,
           type: d.type,
-          status: d.is_active ? 'Active' : 'Inactive',
-          // Default values for fields not in backend yet but required by UI
+          destinationType: d.destinationType || d.destination_type || 'Domestic',
+          status: (d.isActive !== undefined ? d.isActive : d.is_active) ? 'Active' : 'Inactive',
+          isActive: d.isActive !== undefined ? d.isActive : d.is_active,
           activeDeliveries: 0,
           packagesCapacity: 1000,
           availableSpace: 1000,
-          contact: '',
-          serviceArea: '',
-          linkedRoutes: [],
-          drivers: []
+          contact: d.contact || '',
+          serviceArea: d.serviceArea || d.service_area || '',
+          linkedRoutes: d.linkedRoutes || d.linked_routes || [],
+          drivers: d.drivers || []
         }));
       }
     }),
@@ -249,7 +285,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         queries['clients'].refetch();
 
       } else if (entityType === 'drivers') {
-        // Driver creation: 1. Create User, 2. Create Driver Profile
         const driverItem = item as any;
         const userPayload = {
           username: generateUsername(driverItem.name),
@@ -259,12 +294,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           phone: driverItem.phone
         };
 
-        // 1. Create User
         const userRes = await apiClient.post(ENDPOINTS.REGISTER, userPayload);
         const userId = userRes.data.id;
 
         if (userId) {
-          // 2. Create Driver linked to User
           const driverPayload = {
             user: userId,
             license_number: driverItem.licenseNumber,
@@ -278,12 +311,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         const shipmentItem = item as any;
         const payload = {
           client: shipmentItem.clientId,
-          destination: shipmentItem.destinationId, // Use destinationId from form
-          weight_kg: shipmentItem.weight,
-          volume_m3: shipmentItem.volume,
+          destination: shipmentItem.destinationId,
+          weight: shipmentItem.weight,
+          volume: shipmentItem.volume,
           price: shipmentItem.price,
           status: shipmentItem.status || 'Pending',
-          estimated_delivery: shipmentItem.estimatedDelivery || null,
+          estimatedDelivery: shipmentItem.estimatedDelivery || null,
         };
         await apiClient.post(ENDPOINTS.SHIPMENTS, payload);
         queries['shipments'].refetch();
@@ -294,23 +327,22 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           name: destItem.name,
           country: destItem.country,
           city: destItem.city,
-          delivery_zone: destItem.deliveryZone,
-          distance_km: destItem.distanceKm,
+          deliveryZone: destItem.deliveryZone,
+          distanceKm: destItem.distanceKm,
           type: destItem.type,
-          is_active: destItem.status === 'Active'
+          destinationType: destItem.destinationType || 'Domestic',
+          isActive: destItem.status === 'Active'
         };
         await apiClient.post(ENDPOINTS.DESTINATIONS, payload);
-        // Refetch both keys just in case
         queries['destinations'].refetch();
         queries['destinationRecords'].refetch();
 
       } else if (entityType === 'vehicles') {
-        // Map frontend camelCase to backend snake_case
         const vehicleItem = item as any;
         const payload = {
           plate: vehicleItem.plate,
           model: vehicleItem.model,
-          capacity_kg: vehicleItem.capacityKg, // Mapping here
+          capacity_kg: vehicleItem.capacityKg,
           status: vehicleItem.status
         };
         await apiClient.post(ENDPOINTS.VEHICLES, payload);
@@ -327,7 +359,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         };
         await apiClient.post(ENDPOINTS.ROUTES, payload);
         queries['routes'].refetch();
-        // Shipments might be updated (e.g. status locked), so refetch them too
         queries['shipments'].refetch();
 
       } else if (entityType === 'payments') {
@@ -340,7 +371,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         };
         await apiClient.post(ENDPOINTS.PAYMENTS, payload);
         queries['payments'].refetch();
-        queries['invoices'].refetch(); // Update invoice status/balance
+        queries['invoices'].refetch();
 
       } else if (entityType === 'incidents') {
         const incItem = item as any;
@@ -353,7 +384,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         if (incItem.driverId) formData.append('driver', incItem.driverId);
         if (incItem.vehicleId) formData.append('vehicle', incItem.vehicleId);
 
-        // Check for file in a special property 'photoFile' passed from component
         if (incItem.photoFile) {
           formData.append('photo', incItem.photoFile);
         }
@@ -380,6 +410,37 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         await apiClient.post(ENDPOINTS.COMPLAINTS, payload);
         queries['complaints'].refetch();
 
+      } else if (entityType === 'pricing') {
+        const pricingItem = item as any;
+        const payload = {
+          serviceTypeId: pricingItem.serviceTypeId,
+          destinationId: pricingItem.destinationId,
+          basePrice: pricingItem.basePrice,
+          pricePerKm: pricingItem.pricePerKm,
+          isActive: pricingItem.isActive
+        };
+        await apiClient.post(ENDPOINTS.PRICING_RULES, payload);
+        queries['pricing'].refetch();
+
+      } else if (entityType === 'serviceTypes') {
+        const serviceItem = item as any;
+        const payload = {
+          name: serviceItem.name,
+          description: serviceItem.description,
+          category: serviceItem.category,
+          basePrice: Number(serviceItem.basePrice) || 0,
+          pricePerKm: serviceItem.pricePerKm ? Number(serviceItem.pricePerKm) : undefined,
+          estimatedDeliveryTime: serviceItem.estimatedDeliveryTime,
+          isActive: serviceItem.isActive,
+          requirements: serviceItem.requirements,
+          pricingModel: serviceItem.pricingModel,
+          additionalFees: Number(serviceItem.additionalFees) || 0,
+          allowedPackageSizes: serviceItem.allowedPackageSizes,
+          driverNotes: serviceItem.driverNotes
+        };
+        await apiClient.post(ENDPOINTS.SERVICE_TYPES, payload);
+        queries['serviceTypes'].refetch();
+
       } else {
         const endpoint = getEndpointForEntity(entityType);
         if (endpoint) {
@@ -387,17 +448,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           queries[entityType as keyof typeof queries].refetch();
         }
       }
+
+      // Log success
+      auditLog.log(`Created ${entityType}`, 'info', null, {
+        resource_type: entityType,
+        item_data: item
+      });
+
     } catch (e: any) {
       console.error("Add item failed", e);
-      // If 401/403, the interceptor handles the redirect/logout. don't alert.
       if (e.response && (e.response.status === 401 || e.response.status === 403)) {
         return;
       }
 
       if (e.response) {
         console.error("Server Response Error Data:", e.response.data);
-        console.error("Server Response Status:", e.response.status);
-        // Try to show a more user-friendly message if available
         const msg = e.response.data.detail || e.response.data.message || JSON.stringify(e.response.data);
         alert(`Error adding item: ${msg}`);
       } else {
@@ -416,8 +481,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           const driverItem = item as any;
           payload = {
             ...driverItem,
-            license_number: driverItem.licenseNumber, // Map back
-            // name and phone are passed as-is and handled by backend serializer custom update logic
+            license_number: driverItem.licenseNumber,
           };
         } else if (entityType === 'vehicles') {
           const vehicleItem = item as any;
@@ -431,10 +495,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             name: destItem.name,
             country: destItem.country,
             city: destItem.city,
-            delivery_zone: destItem.deliveryZone,
-            distance_km: destItem.distanceKm,
+            deliveryZone: destItem.deliveryZone,
+            distanceKm: destItem.distanceKm,
             type: destItem.type,
-            is_active: destItem.status === 'Active'
+            destinationType: destItem.destinationType || 'Domestic',
+            isActive: destItem.status === 'Active' || destItem.isActive
           };
         } else if (entityType === 'shipments') {
           const shipmentItem = item as any;
@@ -442,12 +507,34 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             id: shipmentItem.id,
             client: shipmentItem.clientId,
             destination: shipmentItem.destinationId,
-            weight_kg: shipmentItem.weight,
-            volume_m3: shipmentItem.volume,
+            weight: shipmentItem.weight,
+            volume: shipmentItem.volume,
             price: shipmentItem.price,
             status: shipmentItem.status,
-            estimated_delivery: shipmentItem.estimatedDelivery ? shipmentItem.estimatedDelivery.split('T')[0] : null,
+            estimatedDelivery: shipmentItem.estimatedDelivery || null,
             currency: shipmentItem.currency
+          };
+        } else if (entityType === 'complaints') {
+          const compItem = item as any;
+          payload = {
+            id: compItem.id,
+            client: compItem.clientId,
+            description: compItem.description,
+            date: compItem.date,
+            status: compItem.status,
+            priority: compItem.priority
+          };
+        } else if (entityType === 'incidents') {
+          const incItem = item as any;
+          payload = {
+            id: incItem.id,
+            type: incItem.type,
+            description: incItem.description,
+            date: incItem.date,
+            resolved: incItem.resolved,
+            related_entity_id: incItem.relatedEntityId,
+            driver: incItem.driverId,
+            vehicle: incItem.vehicleId
           };
         } else if (entityType === 'routes') {
           const routeItem = item as any;
@@ -457,11 +544,43 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             actual_duration_hours: routeItem.actualDuration,
             fuel_consumed_liters: routeItem.fuelConsumed
           };
+        } else if (entityType === 'pricing') {
+          const pricingItem = item as any;
+          payload = {
+            id: pricingItem.id,
+            serviceTypeId: pricingItem.serviceTypeId,
+            destinationId: pricingItem.destinationId,
+            basePrice: pricingItem.basePrice,
+            pricePerKm: pricingItem.pricePerKm,
+            isActive: pricingItem.isActive
+          };
+        } else if (entityType === 'serviceTypes') {
+          const serviceItem = item as any;
+          payload = {
+            name: serviceItem.name,
+            description: serviceItem.description,
+            category: serviceItem.category,
+            basePrice: Number(serviceItem.basePrice) || 0,
+            pricePerKm: serviceItem.pricePerKm ? Number(serviceItem.pricePerKm) : undefined,
+            estimatedDeliveryTime: serviceItem.estimatedDeliveryTime,
+            isActive: serviceItem.isActive !== undefined ? serviceItem.isActive : true,
+            requirements: serviceItem.requirements,
+            pricingModel: serviceItem.pricingModel,
+            additionalFees: Number(serviceItem.additionalFees) || 0,
+            allowedPackageSizes: serviceItem.allowedPackageSizes,
+            driverNotes: serviceItem.driverNotes
+          };
         }
 
-
-        await apiClient.put(`${endpoint}${item.id}/`, payload);
+        await apiClient.patch(`${endpoint}${item.id}/`, payload);
         queries[entityType as keyof typeof queries].refetch();
+
+        // Log success
+        auditLog.log(`Updated ${entityType}`, 'info', null, {
+          resource_type: entityType,
+          resource_id: item.id,
+          updated_fields: Object.keys(payload)
+        });
       }
     } catch (e: any) {
       console.error("Update item failed", e);
@@ -479,6 +598,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       if (endpoint) {
         await apiClient.delete(`${endpoint}${id}/`);
         queries[entityType as keyof typeof queries].refetch();
+
+        // Log success
+        auditLog.log(`Deleted ${entityType}`, 'warning', null, {
+          resource_type: entityType,
+          resource_id: id
+        });
       }
     } catch (e) {
       console.error("Delete item failed", e);
@@ -487,21 +612,19 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const getEndpointForEntity = (type: EntityType) => {
     switch (type) {
-      case 'clients': return ENDPOINTS.USERS; // Note: Filtering by role might be needed
+      case 'clients': return ENDPOINTS.USERS;
       case 'drivers': return ENDPOINTS.DRIVERS;
       case 'vehicles': return ENDPOINTS.VEHICLES;
       case 'shipments': return ENDPOINTS.SHIPMENTS;
       case 'destinations': return ENDPOINTS.DESTINATIONS;
       case 'destinationRecords': return ENDPOINTS.DESTINATIONS;
-      case 'destinations': return ENDPOINTS.DESTINATIONS;
-      case 'destinationRecords': return ENDPOINTS.DESTINATIONS;
       case 'serviceTypes': return ENDPOINTS.SERVICE_TYPES;
+      case 'pricing': return ENDPOINTS.PRICING_RULES;
       case 'routes': return ENDPOINTS.ROUTES;
       case 'invoices': return ENDPOINTS.INVOICES;
       case 'payments': return ENDPOINTS.PAYMENTS;
       case 'incidents': return ENDPOINTS.INCIDENTS;
       case 'complaints': return ENDPOINTS.COMPLAINTS;
-      // ... others
       default: return '';
     }
   }

@@ -6,13 +6,21 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from users.views import UserViewSet
-from logistics.views import DestinationViewSet, ServiceTypeViewSet, ShipmentViewSet, RouteViewSet, PricingRuleViewSet
-from fleet.views import VehicleViewSet, DriverViewSet, IncidentViewSet
+from users.views import UserViewSet, AuditLogViewSet
+from destinations.views import DestinationViewSet
+from service_types.views import ServiceTypeViewSet
+from shipments.views import ShipmentViewSet
+from routes.views import RouteViewSet
+from pricing.views import PricingRuleViewSet
+from vehicles.views import VehicleViewSet
+from drivers.views import DriverViewSet
+from incidents.views import IncidentViewSet
 from billing.views import InvoiceViewSet, PaymentRecordViewSet
-from support.views import ComplaintViewSet
+from complaints.views import ComplaintViewSet
+from clients.views import ClientViewSet
 
 router = DefaultRouter()
+router.register(r'audit-logs', AuditLogViewSet, basename='auditlog')
 router.register(r'users', UserViewSet)
 router.register(r'destinations', DestinationViewSet)
 router.register(r'service-types', ServiceTypeViewSet)
@@ -25,6 +33,7 @@ router.register(r'invoices', InvoiceViewSet)
 router.register(r'payments', PaymentRecordViewSet)
 router.register(r'complaints', ComplaintViewSet)
 router.register(r'pricing-rules', PricingRuleViewSet)
+router.register(r'clients', ClientViewSet)
 
 from django.http import JsonResponse
 

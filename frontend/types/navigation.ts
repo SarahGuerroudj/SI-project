@@ -6,4 +6,5 @@ export interface NavItem {
     path?: string;
     icon: React.ReactNode;
     type?: 'resources';
+    allowedRoles?: string[];
 }

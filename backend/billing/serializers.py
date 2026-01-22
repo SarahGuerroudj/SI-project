@@ -7,7 +7,7 @@ class PaymentRecordSerializer(serializers.ModelSerializer):
         model = PaymentRecord
         fields = '__all__'
 
-from logistics.models import Shipment
+from shipments.models import Shipment
 
 class InvoiceSerializer(serializers.ModelSerializer):
     client_details = UserSerializer(source='client', read_only=True)

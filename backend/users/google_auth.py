@@ -54,16 +54,26 @@ class GoogleAuthView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Get or create user
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'username': email.split('@')[0] + '_' + google_id[:6],
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'role': 'client',  # Default role for Google users
-                }
-            )
+            # Get or create user - handle duplicates by getting the first user with this email
+            try:
+                user = User.objects.filter(email=email).first()
+                created = False
+                if not user:
+                    # Create new user if none exists
+                    user = User.objects.create_user(
+                        email=email,
+                        username=email.split('@')[0] + '_' + google_id[:6],
+                        first_name=first_name,
+                        last_name=last_name,
+                    )
+                    user.role = 'client'  # Default role for Google users
+                    user.save()
+                    created = True
+            except Exception as e:
+                return Response(
+                    {'error': f'Error retrieving/creating user: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
             
             # Update user info if they already exist (optional)
             if not created:
@@ -75,6 +85,31 @@ class GoogleAuthView(APIView):
             
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
+            
+            # Log the event
+            from .audit import AuditLog, get_client_ip
+            ip = get_client_ip(request)
+            
+            if created:
+                AuditLog.log(
+                    action='resource_created',
+                    user=user,
+                    resource_type='User',
+                    resource_id=user.id,
+                    ip_address=ip,
+                    severity='low',
+                    details={'registration_method': 'google'}
+                )
+            
+            AuditLog.log(
+                action='login_success',
+                user=user,
+                resource_type='User',
+                resource_id=user.id,
+                ip_address=ip,
+                severity='low',
+                details={'method': 'google'}
+            )
             
             return Response({
                 'access': str(refresh.access_token),

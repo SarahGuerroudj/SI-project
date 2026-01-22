@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .audit import AuditLog
 
 User = get_user_model()
 
@@ -14,6 +15,18 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'name', 'email', 'role', 'phone', 'address', 'balance', 'first_name', 'last_name', 'bio']
         read_only_fields = ['id', 'balance']  # balance should not be editable via profile
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditLog
+        fields = '__all__'
+        read_only_fields = ['id', 'timestamp'] # Only ID and Timestamp are truly system-generated
+
+class DetailedAuditLogSerializer(serializers.ModelSerializer):
+    """Serializer used for admin reporting with expanded details"""
+    class Meta:
+        model = AuditLog
+        fields = '__all__'
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = User.EMAIL_FIELD

@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     SHIPMENTS: '/shipments/',
     DESTINATIONS: '/destinations/',
     SERVICE_TYPES: '/service-types/',
+    PRICING_RULES: '/pricing-rules/',
     ROUTES: '/routes/',
 
     // Fleet
@@ -24,6 +25,7 @@ export const ENDPOINTS = {
 
     // Support
     COMPLAINTS: '/complaints/',
+    AUDIT_LOGS: '/audit-logs/',
 
     // Billing
     INVOICES: '/invoices/',

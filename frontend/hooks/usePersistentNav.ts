@@ -27,27 +27,25 @@ export function usePersistentNav<T extends Identifiable>(
             try {
                 const parsedOrder = JSON.parse(savedOrder);
 
-                // Validation: Ensure the parsed data is an array
                 if (Array.isArray(parsedOrder)) {
-                    // Reconstruct the item list based on the saved ID order
                     const orderedItems = parsedOrder
                         .map((id: string) => initialItems.find(item => item.id === id))
-                        .filter((item): item is T => !!item); // Type predicate to remove undefined results
+                        .filter((item): item is T => !!item);
 
-                    // Identify any new items in initialItems that were not present in the saved order
                     const newItems = initialItems.filter(
                         item => !parsedOrder.includes(item.id)
                     );
 
-                    // Update state with the saved order + any new items appended at the end
                     setItems([...orderedItems, ...newItems]);
                 }
             } catch (e) {
-                // Graceful failure: Log error and fall back to initialItems (already set in state)
                 console.error(`Failed to parse saved navigation order for key: ${key}`, e);
+                setItems(initialItems);
             }
+        } else {
+            setItems(initialItems);
         }
-    }, []); // Empty dependency array ensures this runs only once on mount
+    }, [key, initialItems]);
 
     /**
      * Handler for the drag-and-drop 'end' event.

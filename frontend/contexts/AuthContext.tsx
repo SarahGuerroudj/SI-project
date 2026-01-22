@@ -20,6 +20,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   isModalOpen: boolean;
   token?: string | null;
   login: (email: string, password?: string) => Promise<boolean>;
@@ -37,6 +38,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [token, setToken] = useState<string | null>(localStorage.getItem('accessToken'));
 
@@ -53,8 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error) {
           console.error('Failed to load user', error);
           logout();
+        } finally {
+          setIsLoading(false);
         }
       } else {
+        setIsLoading(false);
         // If no user, prompt login after a short delay for effect (keeping original behavior)
         setTimeout(() => setIsModalOpen(true), 1000);
       }
@@ -180,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user,
       isAuthenticated: !!user,
+      isLoading,
       isModalOpen,
       token,
       login,

@@ -9,7 +9,7 @@ class Invoice(models.Model):
     )
     
     client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='invoices')
-    shipments = models.ManyToManyField('logistics.Shipment', related_name='invoices')
+    shipments = models.ManyToManyField('shipments.Shipment', related_name='invoices')
     amount_ht = models.DecimalField(max_digits=10, decimal_places=2)
     tva = models.DecimalField(max_digits=10, decimal_places=2)
     amount_ttc = models.DecimalField(max_digits=10, decimal_places=2)
