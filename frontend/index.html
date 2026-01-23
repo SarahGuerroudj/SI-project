@@ -14,17 +14,17 @@
           colors: {
             slate: {
               850: '#15202e',
-              950: '#020617', // Ensure 950 is available
+              950: '#020617',
             }
           },
           backgroundColor: {
-            'light-bg': '#f3f4f6', // softer light mode background
+            'light-bg': '#f3f4f6',
           }
         }
       }
     }
   </script>
-  <!-- Import map removed: module resolution should use local `node_modules` via Vite. -->
+
   <style>
     /* Custom scrollbar for webkit */
     ::-webkit-scrollbar {
@@ -70,12 +70,12 @@
     }
   </style>
   <link rel="stylesheet" href="/index.css">
+  <script type="module" crossorigin src="/index.tsx"></script>
 </head>
 
 <body
-  class="bg-slate-300 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased transition-colors duration-300">
+  class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased transition-colors duration-300">
   <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
 </body>
 
 </html>

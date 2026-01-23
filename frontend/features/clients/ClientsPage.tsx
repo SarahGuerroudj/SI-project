@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ClientsList from './ClientsList';
-import Modal from '../shared/Modal';
+import Modal from '../../components/ui/shared/Modal';
 import ClientForm from './ClientForm';
 import { useData } from '../../contexts/DataContext';
 import { Client } from '../../types';

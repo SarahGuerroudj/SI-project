@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useFavorites } from '../contexts/FavoritesContext';
-import FavoritesList from './shared/FavoritesList';
+import FavoritesList from '../components/ui/shared/FavoritesList';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Activity, DollarSign, User, Zap } from 'lucide-react';
 

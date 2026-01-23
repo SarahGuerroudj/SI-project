@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import VehicleList from './VehicleList';
-import Modal from '../shared/Modal';
+import Modal from '../../components/ui/shared/Modal';
 import VehicleForm from './VehicleForm';
 import { useData } from '../../contexts/DataContext';
 import { Vehicle } from '../../types';

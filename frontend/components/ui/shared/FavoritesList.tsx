@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, X } from 'lucide-react';
-import { FavoriteItem } from '../../contexts/FavoritesContext';
-import { defaultMainNavItems, defaultResourceItems } from '../../config/navigation';
+import { FavoriteItem } from '../../../contexts/FavoritesContext';
+import { defaultMainNavItems, defaultResourceItems } from '../../../config/navigation';
 
 interface Props {
   items: FavoriteItem[];

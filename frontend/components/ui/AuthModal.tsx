@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Mail, Lock, ArrowRight, User, Zap, Github } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 
 const AuthModal: React.FC = () => {

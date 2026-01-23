@@ -44,14 +44,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     clients: useQuery({
       queryKey: ['clients'],
       queryFn: async () => {
-        const res = await apiClient.get(ENDPOINTS.USERS);
-        return res.data.map((u: any) => ({
-          id: u.id.toString(),
-          name: u.first_name || u.name || u.username || 'Unknown',
-          email: u.email || '',
-          phone: u.phone || '',
-          address: u.address || '',
-          balance: parseFloat(u.balance) || 0,
+        const res = await apiClient.get(ENDPOINTS.CLIENTS);
+        return res.data.map((c: any) => ({
+          id: c.id.toString(),
+          name: c.user_details?.first_name || c.user_details?.username || 'Unknown',
+          email: c.user_details?.email || '',
+          phone: c.user_details?.phone || '',
+          address: c.user_details?.address || '',
+          balance: parseFloat(c.user_details?.balance) || 0,
+          clientType: c.client_type,
+          companyName: c.company_name,
+          taxId: c.tax_id,
+          website: c.website,
         }));
       }
     }),
@@ -274,14 +278,31 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       };
 
       if (entityType === 'clients') {
-        const payload = {
-          ...item,
-          username: generateUsername((item as any).name),
-          first_name: (item as any).name,
+        const clientItem = item as any;
+        // Step 1: Register a new user with role='client'
+        const userPayload = {
+          username: generateUsername(clientItem.name),
+          first_name: clientItem.name,
+          email: clientItem.email,
+          phone: clientItem.phone,
+          address: clientItem.address,
           password: 'password123',
           role: 'client'
         };
-        await apiClient.post(ENDPOINTS.REGISTER, payload);
+        const userRes = await apiClient.post(ENDPOINTS.REGISTER, userPayload);
+        const userId = userRes.data.id;
+
+        // Step 2: Create the Client profile linked to the new user
+        if (userId) {
+          const clientPayload = {
+            user: userId,
+            client_type: clientItem.clientType || 'Individual',
+            company_name: clientItem.companyName || null,
+            tax_id: clientItem.taxId || null,
+            website: clientItem.website || null
+          };
+          await apiClient.post(ENDPOINTS.CLIENTS, clientPayload);
+        }
         queries['clients'].refetch();
 
       } else if (entityType === 'drivers') {
@@ -612,7 +633,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const getEndpointForEntity = (type: EntityType) => {
     switch (type) {
-      case 'clients': return ENDPOINTS.USERS;
+      case 'clients': return ENDPOINTS.CLIENTS;
       case 'drivers': return ENDPOINTS.DRIVERS;
       case 'vehicles': return ENDPOINTS.VEHICLES;
       case 'shipments': return ENDPOINTS.SHIPMENTS;

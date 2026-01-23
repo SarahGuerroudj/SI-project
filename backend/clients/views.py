@@ -8,6 +8,6 @@ class ClientViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """
     Clients: Manager-only access for client management
     """
-    queryset = Client.objects.all()
+    queryset = Client.objects.filter(user__role='client')
     serializer_class = ClientSerializer
     permission_classes = [IsManager]

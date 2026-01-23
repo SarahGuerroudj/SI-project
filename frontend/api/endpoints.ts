@@ -9,6 +9,7 @@ export const ENDPOINTS = {
 
     // Users
     USERS: '/users/',
+    CLIENTS: '/clients/',
 
     // Logistics
     SHIPMENTS: '/shipments/',

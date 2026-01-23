@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import DriversList from './DriversList';
-import Modal from '../shared/Modal';
+import Modal from '../../components/ui/shared/Modal';
 import DriverForm from './DriverForm';
 import { useData } from '../../contexts/DataContext';
 import { Driver } from '../../types';
