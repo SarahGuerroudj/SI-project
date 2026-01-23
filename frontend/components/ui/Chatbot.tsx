@@ -3,7 +3,23 @@ import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, Zap } from 'lucid
 import { GoogleGenAI } from "@google/genai";
 
 // Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize Gemini with safety checks
+const getApiKey = () => {
+  return process.env.GEMINI_API_KEY ||
+    process.env.API_KEY ||
+    (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) ||
+    "";
+};
+
+let ai: GoogleGenAI | null = null;
+try {
+  const key = getApiKey();
+  if (key) {
+    ai = new GoogleGenAI(key);
+  }
+} catch (e) {
+  console.error("Failed to initialize Gemini AI:", e);
+}
 
 interface Message {
   role: 'user' | 'model';
@@ -30,6 +46,14 @@ const Chatbot: React.FC = () => {
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
+    if (!ai) {
+      setMessages(prev => [...prev,
+      { role: 'user', text: input.trim() },
+      { role: 'model', text: "AI is currently unavailable. Please ensure the API key is configured." }
+      ]);
+      setInput('');
+      return;
+    }
 
     const userMessage = input.trim();
     setInput('');
