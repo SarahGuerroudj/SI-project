@@ -1,57 +1,111 @@
+# RouteMind - Smart Logistics Management System
 
-## Core Features
+RouteMind is a state-of-the-art logistics and fleet management platform designed to streamline shipment tracking, route optimization, and client management. Built with a modern tech stack, it provides a premium, responsive experience for Managers, Drivers, and Clients.
 
-- **Modular Logistics**: End-to-end management of shipments, routes, and destinations.
-- **AI Forecasting**: Predictive delivery analytics powered by Google Gemini.
-- **Fleet Intelligence**: Incident reporting and real-time vehicle/driver status monitoring.
-- **Automated Billing**: Dynamic pricing rules and PDF invoice generation.
-- **Secure RBAC**: Multi-role access control (Admin, Manager, Driver, Client).
+## 🚀 Tech Stack
 
-## 🛠 Tech Stack
+### Frontend
+- **Framework**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite 6](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **State Management**: [React Query (TanStack) 5](https://tanstack.com/query/latest)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Routing**: [React Router 7](https://reactrouter.com/)
+- **Charts**: [Recharts](https://recharts.org/)
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite.
-- **Backend**: Django 5.0 (Architected into 12 modular apps), DRF, Simple JWT.
-- **Database**: SQLite (Dev) / PostgreSQL (Prod).
-- **Intelligence**: Google Gemini Pro API.
+### Backend
+- **Framework**: [Django 5.0](https://www.djangoproject.com/)
+- **API**: [Django REST Framework](https://www.django-rest-framework.org/)
+- **Auth**: JWT (SimpleJWT) & Google OAuth
+- **Database**: PostgreSQL (Production) / SQLite (Development)
+- **Media Handling**: Pillow (for asset management)
 
 ---
 
-## Quick Setup
+## 🛠️ Installation & Setup
 
-### Backend
+### Prerequisites
+- **Node.js** (v18+)
+- **Python** (v3.10+)
+- **Git**
+
+### 1. Backend Setup
 ```bash
+# Navigate to backend directory
 cd backend
+
+# Create virtual environment
 python -m venv venv
-# Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
-py manage.py migrate
-py manage.py runserver
+
+# Run migrations
+python manage.py migrate
+
+# Seed initial accounts (Manager, Driver, Client)
+python manage.py seed_accounts
+
+# Start backend server
+python manage.py runserver
 ```
 
-### Frontend
+### 2. Frontend Setup
 ```bash
+# Navigate to frontend directory
 cd frontend
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
 ---
 
-## 👥 Access for Testing
+## ⚙️ Configuration & Environment Variables
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@routemind.com` | `admin123` |
-| **Manager** | `manager@routemind.com` | `manager123` |
-| **Client** | `client@routemind.com` | `client123` |
-| **Driver** | `driver@routemind.com` | `driver123` |
+### Backend (.env)
+Create a `.env` file in the `backend/` directory:
+```env
+DEBUG=True
+SECRET_KEY=your_django_secret_key
+DATABASE_URL=postgres://user:password@localhost:5432/routemind
+GOOGLE_OAUTH_CLIENT_ID=your_google_client_id
+```
 
-**Admin Panel**: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+### Frontend (.env.local)
+Create a `.env.local` file in the `frontend/` directory:
+```env
+VITE_API_URL=http://localhost:8000
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
 
 ---
 
-## 🧠 AI Configuration
-To enable AI-driven insights, add your API key to `frontend/.env.local`:
-```env
-GEMINI_API_KEY=your_key_here
+## 📦 Key Dependencies Explained
+
+| Package | Purpose |
+| :--- | :--- |
+| `@tanstack/react-query` | Efficient data fetching, caching, and synchronization. |
+| `@react-oauth/google` | Seamless Google Sign-In integration. |
+| `jspdf` & `jspdf-autotable` | Generating professional PDF invoices and reports. |
+| `lucide-react` | Clean, consistent iconography throughout the UI. |
+| `whitenoise` | Serving static files efficiently in production. |
+| `djangorestframework-simplejwt` | Secure, stateless authentication using JSON Web Tokens. |
+
+---
+
+## 🏗️ Building for Production
+```bash
+# Frontend
+cd frontend
+npm run build
+
+# Backend (Production Ready)
+cd backend
+python manage.py collectstatic
+gunicorn core.wsgi:application
 ```

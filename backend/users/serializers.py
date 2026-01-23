@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'name', 'email', 'role', 'phone', 'address', 'balance', 'first_name', 'last_name', 'bio']
-        read_only_fields = ['id', 'balance']  # balance should not be editable via profile
+        read_only_fields = ['id']  # balance is now editable via profile if needed
 
 class AuditLogSerializer(serializers.ModelSerializer):
     class Meta:
