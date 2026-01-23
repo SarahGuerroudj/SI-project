@@ -129,22 +129,22 @@ const PricingPage: React.FC = () => {
     setFormState(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const payload: PricingRule = {
       id: editingRule ? editingRule.id : `PRC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       ...formState,
     };
 
     if (editingRule) {
-      updateItem('pricing', payload);
+      await updateItem('pricing', payload);
     } else {
-      addItem('pricing', payload);
+      await addItem('pricing', payload);
     }
     setIsModalOpen(false);
   };
 
-  const handleDelete = (rule: PricingRule) => {
-    deleteItem('pricing', rule.id);
+  const handleDelete = async (rule: PricingRule) => {
+    await deleteItem('pricing', rule.id);
     if (selectedRule?.id === rule.id) {
       setSelectedRule(null);
     }

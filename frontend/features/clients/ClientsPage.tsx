@@ -86,18 +86,18 @@ const ClientsPage: React.FC = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const handleSaveClient = (clientData: Omit<Client, 'id'> | Client) => {
+  const handleSaveClient = async (clientData: Omit<Client, 'id'> | Client) => {
     if ('id' in clientData) {
-      updateItem('clients', clientData);
+      await updateItem('clients', clientData);
     } else {
-      addItem('clients', clientData);
+      await addItem('clients', clientData);
     }
     handleCloseModal();
   };
 
-  const handleDeleteClient = () => {
+  const handleDeleteClient = async () => {
     if (deletingClient) {
-      deleteItem('clients', deletingClient.id);
+      await deleteItem('clients', deletingClient.id);
       handleCloseDeleteModal();
     }
   };

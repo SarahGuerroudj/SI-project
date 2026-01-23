@@ -153,7 +153,7 @@ const ServiceTypesPage: React.FC = () => {
     setFormState(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const payload: ServiceType = {
       id: editingService ? editingService.id : `SRV-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       ...formState,
@@ -173,15 +173,15 @@ const ServiceTypesPage: React.FC = () => {
     };
 
     if (editingService) {
-      updateItem('serviceTypes', payload);
+      await updateItem('serviceTypes', payload);
     } else {
-      addItem('serviceTypes', payload);
+      await addItem('serviceTypes', payload);
     }
     setIsModalOpen(false);
   };
 
-  const handleDelete = (service: ServiceType) => {
-    deleteItem('serviceTypes', service.id);
+  const handleDelete = async (service: ServiceType) => {
+    await deleteItem('serviceTypes', service.id);
     if (selectedService?.id === service.id) {
       setSelectedService(null);
     }

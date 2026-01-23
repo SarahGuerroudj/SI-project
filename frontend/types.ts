@@ -56,19 +56,31 @@ export interface Shipment {
   routeId?: string; // Assigned route, if any
   driverId?: string; // Assigned driver, if known
   isLocked?: boolean; // Prevents modification/deletion if assigned to route
+  client?: any; // Nested client details
+  destinationObj?: any; // Nested destination details
 }
 
 export interface Route {
   id: string;
   driverId: string;
+  driver?: any;
+  driverName?: string;
   vehicleId: string;
+  vehicle?: any;
+  vehiclePlate?: string;
   shipmentIds: string[];
+  shipments?: any[];
   date: string;
-  status: 'Planned' | 'Active' | 'Completed';
+  status: 'Planned' | 'Active' | 'Completed' | 'Pending' | 'In Progress';
   teamId?: string; // Assigned team, if applicable
   actualDistance?: number;
   actualDuration?: number;
   fuelConsumed?: number;
+  actual_distance_km?: number;
+  actual_duration_hours?: number;
+  fuel_consumed_liters?: number;
+  estimatedDistance?: number;
+  estimatedDuration?: number;
 }
 
 export interface Invoice {

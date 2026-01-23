@@ -270,7 +270,7 @@ const DestinationsPage: React.FC = () => {
     setFormState(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const payload: DestinationRecord = {
       id: editingRecord ? editingRecord.id : `DST-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
       ...formState,
@@ -285,16 +285,16 @@ const DestinationsPage: React.FC = () => {
     };
 
     if (editingRecord) {
-      updateItem('destinationRecords', payload);
+      await updateItem('destinationRecords', payload);
     } else {
-      addItem('destinationRecords', payload);
+      await addItem('destinationRecords', payload);
     }
 
     closeModal();
   };
 
-  const handleDelete = (record: DestinationRecord) => {
-    deleteItem('destinationRecords', record.id);
+  const handleDelete = async (record: DestinationRecord) => {
+    await deleteItem('destinationRecords', record.id);
     if (selectedRecord?.id === record.id) {
       setSelectedRecord(null);
     }

@@ -59,18 +59,18 @@ const FleetPage: React.FC = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const handleSaveVehicle = (vehicleData: Omit<Vehicle, 'id'> | Vehicle) => {
+  const handleSaveVehicle = async (vehicleData: Omit<Vehicle, 'id'> | Vehicle) => {
     if ('id' in vehicleData) {
-      updateItem('vehicles', vehicleData);
+      await updateItem('vehicles', vehicleData);
     } else {
-      addItem('vehicles', vehicleData);
+      await addItem('vehicles', vehicleData);
     }
     handleCloseModal();
   };
 
-  const handleDeleteVehicle = () => {
+  const handleDeleteVehicle = async () => {
     if (deletingVehicle) {
-      deleteItem('vehicles', deletingVehicle.id);
+      await deleteItem('vehicles', deletingVehicle.id);
       handleCloseDeleteModal();
     }
   };

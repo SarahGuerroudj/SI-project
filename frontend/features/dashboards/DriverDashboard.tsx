@@ -12,7 +12,7 @@ import apiClient from '../../api/client';
 import { useToast } from '../../contexts/ToastContext';
 
 const DriverDashboard: React.FC = () => {
-    const { getItems, updateItem } = useData();
+    const { getItems } = useData();
     const { user } = useAuth();
     const { addToast } = useToast();
     const routes = getItems<Route>('routes');
@@ -28,13 +28,13 @@ const DriverDashboard: React.FC = () => {
     // Filter to driver's routes
     const myRoutes = useMemo(() => {
         return routes.filter(r =>
-            r.driver?.user?.id === user?.id ||
+            r.driver?.user_details?.id === user?.id ||
             r.driver?.id === user?.id ||
             r.driverId === user?.id
         );
     }, [routes, user]);
 
-    const activeRoutes = myRoutes.filter(r => r.status === 'Pending' || r.status === 'In Progress');
+    const activeRoutes = myRoutes.filter(r => r.status === 'Planned' || r.status === 'Active' || r.status === 'Pending' || r.status === 'In Progress');
     const completedToday = myRoutes.filter(r =>
         r.status === 'Completed' &&
         new Date(r.date).toDateString() === new Date().toDateString()
@@ -135,8 +135,8 @@ const DriverDashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${route.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                            route.status === 'In Progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                        (route.status === 'Active' || route.status === 'In Progress') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                            'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                                         }`}>
                                         {route.status}
                                     </span>
@@ -146,24 +146,24 @@ const DriverDashboard: React.FC = () => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                                     <div>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Vehicle</p>
-                                        <p className="font-medium text-slate-900 dark:text-white">{route.vehicle?.plate || 'N/A'}</p>
+                                        <p className="font-medium text-slate-900 dark:text-white">{route.vehiclePlate || 'N/A'}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Distance</p>
                                         <p className="font-medium text-slate-900 dark:text-white">
-                                            {route.actual_distance_km || route.estimatedDistance || 'N/A'} km
+                                            {route.actualDistance || route.estimatedDistance || 'N/A'} km
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Duration</p>
                                         <p className="font-medium text-slate-900 dark:text-white">
-                                            {route.actual_duration_hours || route.estimatedDuration || 'N/A'} hrs
+                                            {route.actualDuration || route.estimatedDuration || 'N/A'} hrs
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Shipments</p>
                                         <p className="font-medium text-slate-900 dark:text-white">
-                                            {route.shipments?.length || 0} items
+                                            {route.shipmentIds?.length || 0} items
                                         </p>
                                     </div>
                                 </div>

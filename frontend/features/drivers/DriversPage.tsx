@@ -76,18 +76,18 @@ const DriversPage: React.FC = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const handleSaveDriver = (driverData: Omit<Driver, 'id'> | Driver) => {
+  const handleSaveDriver = async (driverData: Omit<Driver, 'id'> | Driver) => {
     if ('id' in driverData) {
-      updateItem('drivers', driverData);
+      await updateItem('drivers', driverData);
     } else {
-      addItem('drivers', driverData);
+      await addItem('drivers', driverData);
     }
     handleCloseModal();
   };
 
-  const handleDeleteDriver = () => {
+  const handleDeleteDriver = async () => {
     if (deletingDriver) {
-      deleteItem('drivers', deletingDriver.id);
+      await deleteItem('drivers', deletingDriver.id);
       handleCloseDeleteModal();
     }
   };

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auditLog } from '../services/auditLog';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
+import { useToast } from './ToastContext';
 
 interface User {
   id: string;
@@ -41,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [token, setToken] = useState<string | null>(localStorage.getItem('accessToken'));
+  const { addToast } = useToast();
 
   // Load user profile if token exists
   useEffect(() => {
@@ -91,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error: any) {
       console.error('Login failed', error);
-      alert(`Login Failed: ${error.response?.data?.detail || error.message}`);
+      addToast('error', `Login Failed: ${error.response?.data?.detail || error.message}`);
       return false;
     }
   };
@@ -114,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error: any) {
       console.error('Google login failed', error);
-      alert(`Google Login Failed: ${error.response?.data?.error || error.message}`);
+      addToast('error', `Google Login Failed: ${error.response?.data?.error || error.message}`);
       return false;
     }
   };
@@ -135,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return await login(email, password);
     } catch (error: any) {
       console.error('Registration failed', error);
-      alert(`Registration Failed: ${JSON.stringify(error.response?.data || error.message)}`);
+      addToast('error', `Registration Failed: ${JSON.stringify(error.response?.data || error.message)}`);
       return false;
     }
   };
@@ -176,7 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error('Profile update failed', error);
       console.error('Error response:', error.response?.data);
-      alert(`Profile update failed: ${JSON.stringify(error.response?.data || error.message)}`);
+      addToast('error', `Profile update failed: ${JSON.stringify(error.response?.data || error.message)}`);
       return false;
     }
   };

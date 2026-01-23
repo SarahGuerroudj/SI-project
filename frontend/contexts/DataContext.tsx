@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import auditLog from '../services/auditLog';
+import { useToast } from './ToastContext';
 import {
   Client, Driver, Vehicle, DestinationRate, ServiceType, DestinationRecord, PricingRule,
   Shipment, Route, Invoice, PaymentRecord, Incident, Complaint
@@ -39,6 +40,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
+  const { addToast } = useToast();
   // Use React Query for data fetching
   const queries = {
     clients: useQuery({
@@ -94,8 +96,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           clientId: s.client,
           // Use client_details for name if available, otherwise fallback
           clientName: s.client_details?.first_name || s.client_details?.username || 'Unknown',
+          client: s.client_details,
           destinationId: s.destination,
           destination: s.destination_details?.name || 'Unknown',
+          destinationObj: s.destination_details,
           weight: s.weight,
           volume: s.volume,
           price: parseFloat(s.price),
@@ -117,11 +121,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           driverId: r.driver,
           vehicleId: r.vehicle,
           shipmentIds: r.shipments || [],
+          // Expanded fields
+          driver: r.driver_details,
+          vehicle: r.vehicle_details,
+          shipments: r.shipments_details,
           // Use nested details for display if available
-          driverName: r.driver_details?.user_details?.name || r.driver_details?.user_details?.username || 'Unknown',
+          driverName: r.driver_details?.user_details?.name || r.driver_details?.user_details?.username || r.driver_details?.user_details?.first_name || 'Unknown',
           vehiclePlate: r.vehicle_details?.plate || 'Unknown',
           date: r.date,
-          status: r.status
+          status: r.status,
+          actualDistance: r.actual_distance_km,
+          actualDuration: r.actual_duration_hours,
+          fuelConsumed: r.fuel_consumed_liters,
+          actual_distance_km: r.actual_distance_km,
+          actual_duration_hours: r.actual_duration_hours,
+          fuel_consumed_liters: r.fuel_consumed_liters,
         }));
       }
     }),
@@ -303,7 +317,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           };
           await apiClient.post(ENDPOINTS.CLIENTS, clientPayload);
         }
-        queries['clients'].refetch();
+        await queries['clients'].refetch();
 
       } else if (entityType === 'drivers') {
         const driverItem = item as any;
@@ -325,7 +339,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             status: driverItem.status
           };
           await apiClient.post(ENDPOINTS.DRIVERS, driverPayload);
-          queries['drivers'].refetch();
+          await queries['drivers'].refetch();
         }
 
       } else if (entityType === 'shipments') {
@@ -340,7 +354,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           estimatedDelivery: shipmentItem.estimatedDelivery || null,
         };
         await apiClient.post(ENDPOINTS.SHIPMENTS, payload);
-        queries['shipments'].refetch();
+        await queries['shipments'].refetch();
 
       } else if (entityType === 'destinations' || entityType === 'destinationRecords') {
         const destItem = item as any;
@@ -355,8 +369,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           isActive: destItem.status === 'Active'
         };
         await apiClient.post(ENDPOINTS.DESTINATIONS, payload);
-        queries['destinations'].refetch();
-        queries['destinationRecords'].refetch();
+        await queries['destinations'].refetch();
+        await queries['destinationRecords'].refetch();
 
       } else if (entityType === 'vehicles') {
         const vehicleItem = item as any;
@@ -367,7 +381,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           status: vehicleItem.status
         };
         await apiClient.post(ENDPOINTS.VEHICLES, payload);
-        queries['vehicles'].refetch();
+        await queries['vehicles'].refetch();
 
       } else if (entityType === 'routes') {
         const routeItem = item as any;
@@ -379,8 +393,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           status: routeItem.status || 'Planned'
         };
         await apiClient.post(ENDPOINTS.ROUTES, payload);
-        queries['routes'].refetch();
-        queries['shipments'].refetch();
+        await queries['routes'].refetch();
+        await queries['shipments'].refetch();
 
       } else if (entityType === 'payments') {
         const paymentItem = item as any;
@@ -391,8 +405,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           method: paymentItem.method || 'Bank Transfer'
         };
         await apiClient.post(ENDPOINTS.PAYMENTS, payload);
-        queries['payments'].refetch();
-        queries['invoices'].refetch();
+        await queries['payments'].refetch();
+        await queries['invoices'].refetch();
 
       } else if (entityType === 'incidents') {
         const incItem = item as any;
@@ -412,7 +426,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         await apiClient.post(ENDPOINTS.INCIDENTS, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        queries['incidents'].refetch();
+        await queries['incidents'].refetch();
 
       } else if (entityType === 'complaints') {
         const compItem = item as any;
@@ -429,7 +443,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           }))
         };
         await apiClient.post(ENDPOINTS.COMPLAINTS, payload);
-        queries['complaints'].refetch();
+        await queries['complaints'].refetch();
 
       } else if (entityType === 'pricing') {
         const pricingItem = item as any;
@@ -441,7 +455,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           isActive: pricingItem.isActive
         };
         await apiClient.post(ENDPOINTS.PRICING_RULES, payload);
-        queries['pricing'].refetch();
+        await queries['pricing'].refetch();
 
       } else if (entityType === 'serviceTypes') {
         const serviceItem = item as any;
@@ -460,15 +474,17 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           driverNotes: serviceItem.driverNotes
         };
         await apiClient.post(ENDPOINTS.SERVICE_TYPES, payload);
-        queries['serviceTypes'].refetch();
+        await queries['serviceTypes'].refetch();
 
       } else {
         const endpoint = getEndpointForEntity(entityType);
         if (endpoint) {
           await apiClient.post(endpoint, item);
-          queries[entityType as keyof typeof queries].refetch();
+          await queries[entityType as keyof typeof queries].refetch();
         }
       }
+
+      addToast('success', `Successfully created ${entityType.slice(0, -1)}`);
 
       // Log success
       auditLog.log(`Created ${entityType}`, 'info', null, {
@@ -485,9 +501,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       if (e.response) {
         console.error("Server Response Error Data:", e.response.data);
         const msg = e.response.data.detail || e.response.data.message || JSON.stringify(e.response.data);
-        alert(`Error adding item: ${msg}`);
+        addToast('error', `Error adding item: ${msg}`);
       } else {
-        alert(`Error adding item: ${e.message}`);
+        addToast('error', `Error adding item: ${e.message}`);
       }
     }
   };
@@ -594,7 +610,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         await apiClient.patch(`${endpoint}${item.id}/`, payload);
-        queries[entityType as keyof typeof queries].refetch();
+        await queries[entityType as keyof typeof queries].refetch();
+
+        addToast('success', `Successfully updated ${entityType.slice(0, -1)}`);
 
         // Log success
         auditLog.log(`Updated ${entityType}`, 'info', null, {
@@ -606,9 +624,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     } catch (e: any) {
       console.error("Update item failed", e);
       if (e.response) {
-        alert(`Error updating item: ${JSON.stringify(e.response.data)}`);
+        addToast('error', `Error updating item: ${JSON.stringify(e.response.data)}`);
       } else {
-        alert(`Error updating item: ${e.message}`);
+        addToast('error', `Error updating item: ${e.message}`);
       }
     }
   };
@@ -618,7 +636,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       const endpoint = getEndpointForEntity(entityType);
       if (endpoint) {
         await apiClient.delete(`${endpoint}${id}/`);
-        queries[entityType as keyof typeof queries].refetch();
+        await queries[entityType as keyof typeof queries].refetch();
+        addToast('success', `Successfully deleted ${entityType.slice(0, -1)}`);
 
         // Log success
         auditLog.log(`Deleted ${entityType}`, 'warning', null, {
