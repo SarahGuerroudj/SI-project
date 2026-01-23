@@ -11,9 +11,12 @@ Welcome to the RouteMind User Manual. This guide will help you navigate the syst
 
 ---
 
-## 🛡️ Admin Guide
+##  Admin Guide
 
 Admins have the highest level of authority and are responsible for system governance and security.
+
+email: admin@routeMind.com
+password: admin123
 
 ### User & Role Management
 - **Full Control**: Admins can Create, Read, Update, and Delete any user in the system.
@@ -29,9 +32,12 @@ Admins have the highest level of authority and are responsible for system govern
 
 ---
 
-## Manager Guide
+##  Manager Guide
 
 As a Manager, you have full control over the logistics operations.
+
+email: manager@routeMind.com
+password: manager123
 
 ### Client Management
 - Navigate to **Clients** in the sidebar.
@@ -48,9 +54,12 @@ As a Manager, you have full control over the logistics operations.
 
 ---
 
-## Driver Guide
+##  Driver Guide
 
 Drivers use a simplified dashboard optimized for mobile and tablet use.
+
+email: driver@routeMind.com
+password: driver123
 
 ### Managing Routes
 - **Active Routes**: On your dashboard, you will see routes assigned to you for today.
@@ -59,9 +68,12 @@ Drivers use a simplified dashboard optimized for mobile and tablet use.
 
 ---
 
-## Client Guide
+##  Client Guide
 
 Clients can track their shipments in real-time.
+
+email: client@routeMind.com
+password: client123
 
 ### Shipments
 - **Create Shipment**: Click "New Shipment" to request a delivery.
@@ -70,13 +82,4 @@ Clients can track their shipments in real-time.
 
 ---
 
-## FAQ & Troubleshooting
 
-**Q: I added a client but they don't appear in the list.**
-A: Ensure you filled all required fields. The list refreshes automatically, but you can try a manual refresh if the connection is slow.
-
-**Q: How do I change my profile details?**
-A: Navigate to the **Account** section at the bottom of the sidebar to update your phone number and bio.
-
-**Q: Google Sign-In is failing.**
-A: Ensure you are using the email address registered with the system or that you have a stable internet connection.
