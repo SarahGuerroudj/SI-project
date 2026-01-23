@@ -68,6 +68,7 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    username = serializers.CharField(required=False)
 
     class Meta:
         model = User
@@ -75,6 +76,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         password = validated_data.pop('password')
+        # If username is not provided, use email as username
+        if 'username' not in validated_data or not validated_data['username']:
+            validated_data['username'] = validated_data['email']
+            
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()

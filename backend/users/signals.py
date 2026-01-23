@@ -9,18 +9,9 @@ User = get_user_model()
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """
-    Auto-create related profiles based on user role when a User is created.
+    Automatic profile creation removed to allow explicit creation via API.
     """
-    if created:
-        if instance.role == 'driver':
-            Driver.objects.get_or_create(user=instance, defaults={
-                'license_number': 'PENDING',
-                'status': 'Available'
-            })
-        elif instance.role == 'client':
-            Client.objects.get_or_create(user=instance, defaults={
-                'client_type': 'Individual', # Default to Individual
-            })
+    pass
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):

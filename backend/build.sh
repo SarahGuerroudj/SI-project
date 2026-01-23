@@ -15,6 +15,6 @@ echo "Step 3: Running migrations..."
 python manage.py migrate
 
 echo "Step 4: Seeding test accounts..."
-python seed_data.py
+python manage.py seed_accounts
 
 echo "Build successful!"
