@@ -164,7 +164,7 @@ AUTH_USER_MODEL = 'users.User'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173 http://localhost:3000').split(' ')
+CORS_ALLOWED_ORIGINS = [origin.rstrip('/') for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173 http://localhost:3000').split(' ') if origin]
 CORS_ALLOW_ALL_ORIGINS = True # Temporary for debugging if empty
 
 # Google OAuth Settings
