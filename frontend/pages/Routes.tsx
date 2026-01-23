@@ -25,7 +25,7 @@ const Routes: React.FC = () => {
   const [shipmentsOpen, setShipmentsOpen] = useState(true);
 
   const { addToast } = useToast();
-  const { getItems, addItem } = useData();
+  const { getItems, addItem, updateItem, deleteItem } = useData();
   const { user } = useAuth();
 
   // Check if user can create routes (only managers and admins)
@@ -103,6 +103,38 @@ const Routes: React.FC = () => {
 
   const handleBackToPlanning = () => {
     setViewingRoute(null);
+  };
+
+  const handleDeleteRoute = async () => {
+    if (!viewingRoute) return;
+
+    if (window.confirm('Are you sure you want to delete this route? This will set all assigned shipments back to Pending.')) {
+      try {
+        await deleteItem('routes', viewingRoute.id);
+        setViewingRoute(null);
+        addToast('success', 'Route deleted successfully');
+      } catch (error) {
+        addToast('error', 'Failed to delete route');
+      }
+    }
+  };
+
+  const handleCompleteRoute = async () => {
+    if (!viewingRoute) return;
+
+    try {
+      await updateItem('routes', {
+        ...viewingRoute,
+        status: 'Completed',
+        actualDistance: parseFloat(completionData.actualDistance) || 0,
+        fuelConsumed: parseFloat(completionData.fuelConsumed) || 0,
+        actualDuration: parseFloat(completionData.actualDuration) || 0
+      });
+      addToast('success', 'Route completed successfully');
+      setViewingRoute(null);
+    } catch (error) {
+      addToast('error', 'Failed to complete route');
+    }
   };
 
   // Helper to get details for the detail view
@@ -581,13 +613,24 @@ const Routes: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={handleBackToPlanning}
-                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-2"
-              >
-                <ArrowLeft size={16} />
-                Back to Planning
-              </button>
+              <div className="flex items-center gap-3">
+                {canCreateRoutes && (
+                  <button
+                    onClick={handleDeleteRoute}
+                    className="px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-800 text-red-600 dark:text-red-400 transition-colors flex items-center gap-2"
+                  >
+                    <X size={16} />
+                    Delete Route
+                  </button>
+                )}
+                <button
+                  onClick={handleBackToPlanning}
+                  className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-2"
+                >
+                  <ArrowLeft size={16} />
+                  Back to Planning
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -711,13 +754,7 @@ const Routes: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    // Handle completion logic here (mock)
-                    try {
-                      // In real app, call updateItem('routes', ...)
-                      addToast('success', 'Route completed and metrics saved');
-                    } catch (e) { console.error(e) }
-                  }}
+                  onClick={handleCompleteRoute}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-lime-500 hover:bg-lime-600 text-white font-medium shadow-sm hover:shadow-md transition-all h-fit"
                 >
                   <CheckCircle size={18} />

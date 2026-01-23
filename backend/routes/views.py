@@ -19,6 +19,9 @@ class RouteViewSet(AuditLogMixin, viewsets.ModelViewSet):
         if self.action in ['create', 'destroy']:
             return [IsManager()]
         elif self.action in ['update', 'partial_update']:
+            # Managers can update everything, Drivers can only update status
+            if self.request.user.role in ['admin', 'manager']:
+                return [IsManager()]
             return [DriverCanUpdateStatusOnly()]
         return [IsDriver()]
     
