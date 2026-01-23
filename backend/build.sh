@@ -5,7 +5,13 @@ set -o errexit
 # Ensure we are in the script's directory (backend/)
 cd "$(dirname "$0")"
 
+echo "Step 1: Installing dependencies..."
 pip install -r requirements.txt
 
+echo "Step 2: Collecting static files..."
 python manage.py collectstatic --no-input
+
+echo "Step 3: Running migrations..."
 python manage.py migrate
+
+echo "Build successful!"
