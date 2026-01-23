@@ -31,7 +31,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-jgf+^m1yxg&l5j$+j-!xw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(' ')
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', '*').replace(',', ' ').split(' ') if host]
 
 
 # Application definition
@@ -166,6 +166,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS
 CORS_ALLOWED_ORIGINS = [origin.rstrip('/') for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173 http://localhost:3000').split(' ') if origin]
 CORS_ALLOW_ALL_ORIGINS = True # Temporary for debugging if empty
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = [origin.rstrip('/') for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://routemind-blush.vercel.app http://localhost:5173 http://localhost:3000').split(' ') if origin]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Google OAuth Settings
 # Get your Client ID from https://console.cloud.google.com/apis/credentials
