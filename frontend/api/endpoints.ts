@@ -1,34 +1,34 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1/';
 
 export const ENDPOINTS = {
     // Auth
-    LOGIN: '/token/',
-    REFRESH: '/token/refresh/',
-    REGISTER: '/register/',
-    GOOGLE_AUTH: '/auth/google/',
+    LOGIN: 'token/',
+    REFRESH: 'token/refresh/',
+    REGISTER: 'register/',
+    GOOGLE_AUTH: 'auth/google/',
 
     // Users
-    USERS: '/users/',
-    CLIENTS: '/clients/',
+    USERS: 'users/',
+    CLIENTS: 'clients/',
 
     // Logistics
-    SHIPMENTS: '/shipments/',
-    DESTINATIONS: '/destinations/',
-    SERVICE_TYPES: '/service-types/',
-    PRICING_RULES: '/pricing-rules/',
-    ROUTES: '/routes/',
+    SHIPMENTS: 'shipments/',
+    DESTINATIONS: 'destinations/',
+    SERVICE_TYPES: 'service-types/',
+    PRICING_RULES: 'pricing-rules/',
+    ROUTES: 'routes/',
 
     // Fleet
-    VEHICLES: '/vehicles/',
-    DRIVERS: '/drivers/',
-    INCIDENTS: '/incidents/',
+    VEHICLES: 'vehicles/',
+    DRIVERS: 'drivers/',
+    INCIDENTS: 'incidents/',
 
 
     // Support
-    COMPLAINTS: '/complaints/',
-    AUDIT_LOGS: '/audit-logs/',
+    COMPLAINTS: 'complaints/',
+    AUDIT_LOGS: 'audit-logs/',
 
     // Billing
-    INVOICES: '/invoices/',
-    PAYMENTS: '/payments/',
+    INVOICES: 'invoices/',
+    PAYMENTS: 'payments/',
 };
