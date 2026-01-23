@@ -14,4 +14,7 @@ python manage.py collectstatic --no-input
 echo "Step 3: Running migrations..."
 python manage.py migrate
 
+echo "Step 4: Seeding test accounts..."
+python seed_data.py
+
 echo "Build successful!"
