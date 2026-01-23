@@ -8,9 +8,15 @@ venv/
 env/
 .venv/
 
-# Django
+# Django & Logs
 db.sqlite3
 *.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 local_settings.py
 media/
 
@@ -18,20 +24,26 @@ media/
 .env
 .env.local
 .env.*.local
+*.local
 
-# IDE
+# IDE & OS
 .idea/
 .vscode/
+!.vscode/extensions.json
 *.swp
 *.swo
-
-# OS
+*.sw?
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 .DS_Store
 Thumbs.db
 
-# Node (frontend)
+# Node & Frontend
 node_modules/
 dist/
+dist-ssr/
 .cache/
 
 # Build artifacts
