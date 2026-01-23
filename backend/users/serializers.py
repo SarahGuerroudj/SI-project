@@ -29,48 +29,42 @@ class DetailedAuditLogSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = User.EMAIL_FIELD
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove the default username field since we use email
+        if 'username' in self.fields:
+            del self.fields['username']
 
     def validate(self, attrs):
-        # We expect 'email' instead of 'username' in attrs because of username_field override?
-        # Actually TokenObtainPairSerializer expects 'username' key but compares against username_field.
-        # But frontend will likely send 'email'. Let's handle 'email' key explicitly if needed or rely on frontend sending 'username': email.
-        # Standardize: Frontend should send { "email": "...", "password": "..." }
-        
         email = attrs.get('email')
         password = attrs.get('password')
 
         if email and password:
-            # Try to authenticate with email
-            user = authenticate(request=self.context.get('request'), email=email, password=password) # Requires custom authentication backend OR we manually find user
-            
-            # Since we didn't write a custom Auth Backend, we'll manually look up the user first.
-            if not user:
-                try:
-                    user_obj = User.objects.get(email=email)
-                    if user_obj.check_password(password):
-                        user = user_obj
-                except User.DoesNotExist:
-                    pass
-        
-            if not user:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
                  raise serializers.ValidationError('No active account found with the given credentials')
 
-            # Now we have a user, let's create tokens.
-            # TokenObtainPairSerializer.validate needs 'username' in attrs usually.
-            # Let's bypass super().validate() which does authentication and just return tokens manually or mock attrs.
-            
+            if not user.check_password(password):
+                 raise serializers.ValidationError('No active account found with the given credentials')
+
+            if not user.is_active:
+                raise serializers.ValidationError('User account is disabled')
+
             refresh = self.get_token(user)
             data = {}
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             
-            # Add custom data
+            # Add custom data that the frontend expects
             data['user'] = UserSerializer(user).data
             
             return data
             
-        return super().validate(attrs)
+        raise serializers.ValidationError('Email and password are required')
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
