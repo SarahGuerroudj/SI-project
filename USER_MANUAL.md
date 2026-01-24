@@ -74,6 +74,7 @@ Clients can track their shipments in real-time.
 
 email: client@routeMind.com
 password: client123
+or a normal sign in
 
 ### Shipments
 - **Create Shipment**: Click "New Shipment" to request a delivery.

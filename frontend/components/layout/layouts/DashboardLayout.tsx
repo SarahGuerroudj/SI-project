@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
 import {
     Zap,
     LogIn,
@@ -82,6 +82,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-400"></div>
             </div>
         );
+    }
+
+    // Redirect to landing page if not authenticated
+    if (!isAuthenticated) {
+        return <Navigate to="/" replace />;
     }
 
     return (

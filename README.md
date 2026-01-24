@@ -44,7 +44,7 @@ pip install -r requirements.txt
 # Run migrations
 python manage.py migrate
 
-# Seed initial accounts (Manager, Driver, Client)
+# Seed initial accounts (Admin, Manager, Driver, Client)
 python manage.py seed_accounts
 
 # Start backend server
@@ -104,4 +104,4 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id
 | `whitenoise` | Serving static files efficiently in production. |
 | `djangorestframework-simplejwt` | Secure, stateless authentication using JSON Web Tokens. |
 
-
+note: cus the app is empty in the first time you need to create at least one destination and one client to be able to add a shipment.

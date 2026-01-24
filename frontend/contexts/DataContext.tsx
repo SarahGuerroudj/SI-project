@@ -275,14 +275,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const getItems = <T extends Entity>(entityType: EntityType): T[] => {
     const query = queries[entityType as keyof typeof queries];
-    if (entityType === 'clients') {
-      console.log('DataContext: getItems(clients) query state:', {
-        isLoading: query.isLoading,
-        error: query.error,
-        data: query.data
-      });
+
+    // Log errors and empty states to help debugging
+    if (query?.isError) {
+      console.error(`DataContext: Error fetching ${entityType}:`, query.error);
     }
-    return (query?.data || []) as T[];
+
+    const data = (query?.data || []) as T[];
+    if (data.length === 0 && !query?.isLoading) {
+      console.warn(`DataContext: ${entityType} list is empty.`);
+    }
+
+    return data;
   };
 
   const addItem = async <T extends Entity>(entityType: EntityType, item: Omit<T, 'id'>) => {
