@@ -53,19 +53,28 @@ const Shipments: React.FC = () => {
         return; // Clients not loaded yet, will retry when they load
       }
       
+      const authUserId = auth.user?.id?.toString();
       const currentClient = clients.find((c: any) => {
         // Match by userId (could be string or number)
         const clientUserId = c.userId?.toString();
-        const authUserId = auth.user?.id?.toString();
-        return clientUserId === authUserId;
+        return clientUserId === authUserId && clientUserId !== '';
       });
       
       if (currentClient) {
         if (formData.clientId !== currentClient.id) {
+          console.log('Auto-setting clientId for client user:', { 
+            authUserId, 
+            clientId: currentClient.id, 
+            clientUserId: currentClient.userId 
+          });
           setFormData(prev => ({ ...prev, clientId: currentClient.id }));
         }
       } else {
-        console.warn('Could not find client for user:', auth.user?.id, 'Available clients:', clients.map((c: any) => ({ id: c.id, userId: c.userId })));
+        console.warn('Could not find client for user:', {
+          authUserId,
+          userRole: auth.user?.role,
+          availableClients: clients.map((c: any) => ({ id: c.id, userId: c.userId, name: c.name }))
+        });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,19 +125,72 @@ const Shipments: React.FC = () => {
     // Auto-set clientId for clients if not set
     let finalClientId = formData.clientId;
     if (!finalClientId && auth.user?.role?.toLowerCase() === 'client') {
-      const currentClient = clients.find((c: any) => {
-        // Match by userId (could be string or number)
-        const clientUserId = c.userId?.toString();
-        const authUserId = auth.user?.id?.toString();
-        return clientUserId === authUserId;
+      // Check if clients are loaded
+      if (clients.length === 0) {
+        newErrors.push('Client data is still loading. Please wait a moment and try again.');
+        setErrors(newErrors);
+        try { addToast('error', 'Client data is still loading. Please wait a moment and try again.'); } catch (err) { }
+        return;
+      }
+
+      const authUserId = auth.user?.id?.toString();
+      const authUserEmail = auth.user?.email?.toLowerCase();
+      console.log('Attempting to find client for user:', { 
+        authUserId, 
+        authUserEmail, 
+        clientsCount: clients.length,
+        firstClientSample: clients[0] ? { id: clients[0].id, userId: clients[0].userId, email: clients[0].email } : null
       });
+      
+      // Try to find by userId first
+      let currentClient = clients.find((c: any) => {
+        const clientUserId = c.userId?.toString();
+        const matches = clientUserId === authUserId && clientUserId !== '';
+        if (matches) {
+          console.log('Found client by userId match:', { clientId: c.id, clientUserId, name: c.name });
+        }
+        return matches;
+      });
+      
+      // Fallback: try to find by email if userId match fails
+      if (!currentClient && authUserEmail) {
+        currentClient = clients.find((c: any) => {
+          const clientEmail = c.email?.toLowerCase();
+          const matches = clientEmail === authUserEmail;
+          if (matches) {
+            console.log('Found client by email match:', { clientId: c.id, email: c.email, name: c.name });
+          }
+          return matches;
+        });
+      }
+      
       if (currentClient) {
         finalClientId = currentClient.id;
+        console.log('Successfully set finalClientId to:', finalClientId);
+        // Update formData immediately
         setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+      } else {
+        console.error('Client not found!', {
+          authUserId,
+          authUserEmail,
+          userRole: auth.user?.role,
+          availableClients: clients.map((c: any) => ({ 
+            id: c.id, 
+            userId: c.userId, 
+            email: c.email, 
+            name: c.name 
+          }))
+        });
+        // For clients, this is a critical error - their client record might not exist
+        newErrors.push('Unable to find your client account. Please contact support.');
+        setErrors(newErrors);
+        try { addToast('error', 'Unable to find your client account. Please contact support.'); } catch (err) { }
+        return; // Stop here if we can't find the client
       }
     }
 
-    if (!finalClientId) {
+    // Only show error if user is not a client (admins/managers need to select)
+    if (!finalClientId && auth.user?.role?.toLowerCase() !== 'client') {
       newErrors.push('Please select a client.');
     }
     if (!formData.destinationId) {
@@ -242,11 +304,18 @@ const Shipments: React.FC = () => {
   const resetForm = () => {
     // Auto-set clientId if user is a client
     let initialClientId = '';
-    if (auth.user?.role?.toLowerCase() === 'client') {
+    if (auth.user?.role?.toLowerCase() === 'client' && clients.length > 0) {
       // Find the client record that matches the logged-in user
-      const currentClient = clients.find((c: any) => c.userId === auth.user?.id);
+      const authUserId = auth.user?.id?.toString();
+      const currentClient = clients.find((c: any) => {
+        const clientUserId = c.userId?.toString();
+        return clientUserId === authUserId && clientUserId !== '';
+      });
       if (currentClient) {
         initialClientId = currentClient.id;
+        console.log('resetForm: Setting initial clientId to:', initialClientId);
+      } else {
+        console.warn('resetForm: Could not find client for user:', authUserId);
       }
     }
     
@@ -323,21 +392,41 @@ const Shipments: React.FC = () => {
         {canCreateShipment && (
           <button
             onClick={() => { 
+              // First, try to set clientId if user is a client
+              if (auth.user?.role?.toLowerCase() === 'client' && clients.length > 0) {
+                const authUserId = auth.user?.id?.toString();
+                const currentClient = clients.find((c: any) => {
+                  const clientUserId = c.userId?.toString();
+                  return clientUserId === authUserId && clientUserId !== '';
+                });
+                if (currentClient) {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    clientId: currentClient.id,
+                    destinationId: '', 
+                    weight: 0, 
+                    volume: 0, 
+                    estimatedDelivery: '', 
+                    currency: 'EUR' 
+                  }));
+                }
+              }
               resetForm(); 
               setShowModal(true);
-              // Auto-set clientId for clients after modal opens (clients might not be loaded yet)
+              // Also try after a delay in case clients are still loading
               setTimeout(() => {
                 if (auth.user?.role?.toLowerCase() === 'client' && clients.length > 0) {
+                  const authUserId = auth.user?.id?.toString();
                   const currentClient = clients.find((c: any) => {
                     const clientUserId = c.userId?.toString();
-                    const authUserId = auth.user?.id?.toString();
-                    return clientUserId === authUserId;
+                    return clientUserId === authUserId && clientUserId !== '';
                   });
-                  if (currentClient) {
+                  if (currentClient && formData.clientId !== currentClient.id) {
+                    console.log('Setting clientId after delay:', currentClient.id);
                     setFormData(prev => ({ ...prev, clientId: currentClient.id }));
                   }
                 }
-              }, 100);
+              }, 200);
             }}
             className="bg-lime-400 text-slate-900 px-5 py-2.5 rounded-full hover:bg-lime-300 flex items-center transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] font-semibold"
           >
