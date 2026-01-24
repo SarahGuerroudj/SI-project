@@ -112,6 +112,15 @@ const Billing: React.FC = () => {
     }
 
     try {
+      // Find the client to get the userId (User ID, not Client model ID)
+      const selectedClient = clients.find((c: Client) => c.id === newInvoice.clientId);
+      const userId = selectedClient?.userId;
+      
+      if (!userId) {
+        addToast('error', 'Client user ID not found. Please select a valid client.');
+        return;
+      }
+
       const amountHT = newInvoice.amountHT;
       const tva = amountHT * (newInvoice.tvaRate / 100);
       const amountTTC = amountHT + tva;
@@ -120,7 +129,7 @@ const Billing: React.FC = () => {
       // Based on DataContext, if we use 'others' fallback, it sends item as is.
       // We will send snake_case to be safe for backend.
       const payload: any = {
-        client: newInvoice.clientId,
+        client: userId, // Use User ID, not Client model ID
         amount_ht: amountHT,
         amount_ttc: amountTTC,
         tva: tva,

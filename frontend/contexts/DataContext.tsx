@@ -31,7 +31,7 @@ type EntityType =
 
 interface DataContextType {
   getItems: <T extends Entity>(entityType: EntityType) => T[];
-  addItem: <T extends Entity>(entityType: EntityType, item: Omit<T, 'id'>) => Promise<void>;
+  addItem: <T extends Entity>(entityType: EntityType, item: Omit<T, 'id'>) => Promise<boolean>;
   updateItem: <T extends Entity>(entityType: EntityType, item: T) => Promise<void>;
   deleteItem: (entityType: EntityType, id: string) => Promise<void>;
   isLoading: boolean;
@@ -49,6 +49,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         const res = await apiClient.get(ENDPOINTS.CLIENTS);
         return res.data.map((c: any) => ({
           id: c.id.toString(),
+          userId: c.user?.toString() || c.user_details?.id?.toString() || '',
           name: c.user_details?.first_name || c.user_details?.username || 'Unknown',
           email: c.user_details?.email || '',
           phone: c.user_details?.phone || '',
@@ -289,7 +290,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     return data;
   };
 
-  const addItem = async <T extends Entity>(entityType: EntityType, item: Omit<T, 'id'>) => {
+  const addItem = async <T extends Entity>(entityType: EntityType, item: Omit<T, 'id'>): Promise<boolean> => {
     try {
       const generateUsername = (name: string) => {
         return name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9@.+_-]/g, '') + '_' + Math.floor(Math.random() * 1000);
@@ -348,8 +349,17 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
       } else if (entityType === 'shipments') {
         const shipmentItem = item as any;
+        // Find the client to get the userId (User ID, not Client model ID)
+        const clients = queries.clients.data || [];
+        const selectedClient = clients.find((c: any) => c.id === shipmentItem.clientId);
+        const userId = selectedClient?.userId || shipmentItem.userId;
+        
+        if (!userId) {
+          throw new Error('Client user ID not found. Please select a valid client.');
+        }
+        
         const payload = {
-          client: shipmentItem.clientId,
+          client: userId, // Use User ID, not Client model ID
           destination: shipmentItem.destinationId,
           weight: shipmentItem.weight,
           volume: shipmentItem.volume,
@@ -434,8 +444,17 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
       } else if (entityType === 'complaints') {
         const compItem = item as any;
+        // Find the client to get the userId (User ID, not Client model ID)
+        const clients = queries.clients.data || [];
+        const selectedClient = clients.find((c: any) => c.id === compItem.clientId);
+        const userId = selectedClient?.userId || compItem.userId;
+        
+        if (!userId) {
+          throw new Error('Client user ID not found. Please select a valid client.');
+        }
+        
         const payload = {
-          client: compItem.clientId,
+          client: userId, // Use User ID, not Client model ID
           description: compItem.description,
           date: compItem.date,
           status: compItem.status,
@@ -488,13 +507,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      addToast('success', `Successfully created ${entityType.slice(0, -1)}`);
+      // Skip generic success toast for shipments - handled in Shipments.tsx
+      if (entityType !== 'shipments') {
+        addToast('success', `Successfully created ${entityType.slice(0, -1)}`);
+      }
 
       // Log success
       auditLog.log(`Created ${entityType}`, 'info', null, {
         resource_type: entityType,
         item_data: item
       });
+
+      return true;
 
     } catch (e: any) {
       console.error("Add item failed", e);
@@ -509,6 +533,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       } else {
         addToast('error', `Error adding item: ${e.message}`);
       }
+      return false;
     }
   };
 
@@ -544,9 +569,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           };
         } else if (entityType === 'shipments') {
           const shipmentItem = item as any;
+          // Find the client to get the userId (User ID, not Client model ID)
+          const clients = queries.clients.data || [];
+          const selectedClient = clients.find((c: any) => c.id === shipmentItem.clientId);
+          const userId = selectedClient?.userId || shipmentItem.userId;
+          
+          if (!userId) {
+            throw new Error('Client user ID not found. Please select a valid client.');
+          }
+          
           payload = {
             id: shipmentItem.id,
-            client: shipmentItem.clientId,
+            client: userId, // Use User ID, not Client model ID
             destination: shipmentItem.destinationId,
             weight: shipmentItem.weight,
             volume: shipmentItem.volume,
@@ -557,9 +591,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           };
         } else if (entityType === 'complaints') {
           const compItem = item as any;
+          // Find the client to get the userId (User ID, not Client model ID)
+          const clients = queries.clients.data || [];
+          const selectedClient = clients.find((c: any) => c.id === compItem.clientId);
+          const userId = selectedClient?.userId || compItem.userId;
+          
+          if (!userId) {
+            throw new Error('Client user ID not found. Please select a valid client.');
+          }
+          
           payload = {
             id: compItem.id,
-            client: compItem.clientId,
+            client: userId, // Use User ID, not Client model ID
             description: compItem.description,
             date: compItem.date,
             status: compItem.status,

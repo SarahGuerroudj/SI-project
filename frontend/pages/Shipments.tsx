@@ -135,15 +135,21 @@ const Shipments: React.FC = () => {
     if (isEditing && formData.id) {
       await updateItem('shipments', { ...payload, id: formData.id } as any);
       try { addToast('success', 'Shipment updated successfully.'); } catch (err) { }
+      setShowModal(false);
+      setErrors([]);
+      setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '', currency: 'EUR' });
+      setIsEditing(false);
     } else {
-      await addItem('shipments', payload);
-      try { addToast('success', 'Shipment created successfully.'); } catch (err) { }
+      const success = await addItem('shipments', payload);
+      if (success) {
+        try { addToast('success', 'Shipment created successfully.'); } catch (err) { }
+        setShowModal(false);
+        setErrors([]);
+        setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '', currency: 'EUR' });
+        setIsEditing(false);
+      }
+      // If not successful, error toast is already shown by addItem
     }
-
-    setShowModal(false);
-    setErrors([]);
-    setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '', currency: 'EUR' });
-    setIsEditing(false);
   };
 
   const handleEdit = (shipment: Shipment) => {

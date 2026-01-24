@@ -9,6 +9,7 @@ export enum ShipmentStatus {
 
 export interface Client {
   id: string;
+  userId: string; // User ID (needed for shipments, invoices, etc.)
   name: string;
   email: string;
   phone: string;
