@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shipment, ShipmentStatus } from '../types';
 import { Plus, Search, Filter, Package, Truck, CheckCircle, Clock, History, X, AlertCircle, Lock, Calendar, Star, Edit } from 'lucide-react';
@@ -44,6 +44,17 @@ const Shipments: React.FC = () => {
 
   // Drivers cannot create shipments
   const canCreateShipment = auth.user?.role?.toLowerCase() !== 'driver';
+  
+  // Auto-set clientId when modal opens and user is a client
+  useEffect(() => {
+    if (showModal && auth.user?.role?.toLowerCase() === 'client' && !isEditing) {
+      const currentClient = clients.find((c: any) => c.userId === auth.user?.id);
+      if (currentClient && formData.clientId !== currentClient.id) {
+        setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showModal, auth.user?.id, auth.user?.role, isEditing]);
 
   const currencySymbol = (c: 'EUR' | 'DZD') => c === 'DZD' ? 'د.ج' : '€';
 
@@ -199,7 +210,24 @@ const Shipments: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ clientId: '', destinationId: '', weight: 0, volume: 0, estimatedDelivery: '', currency: 'EUR' });
+    // Auto-set clientId if user is a client
+    let initialClientId = '';
+    if (auth.user?.role?.toLowerCase() === 'client') {
+      // Find the client record that matches the logged-in user
+      const currentClient = clients.find((c: any) => c.userId === auth.user?.id);
+      if (currentClient) {
+        initialClientId = currentClient.id;
+      }
+    }
+    
+    setFormData({ 
+      clientId: initialClientId, 
+      destinationId: '', 
+      weight: 0, 
+      volume: 0, 
+      estimatedDelivery: '', 
+      currency: 'EUR' 
+    });
     setIsEditing(false);
     setShowModal(false);
     setErrors([]);
@@ -264,7 +292,17 @@ const Shipments: React.FC = () => {
         </div>
         {canCreateShipment && (
           <button
-            onClick={() => { resetForm(); setShowModal(true); }}
+            onClick={() => { 
+              resetForm(); 
+              // Auto-set clientId for clients after reset
+              if (auth.user?.role?.toLowerCase() === 'client') {
+                const currentClient = clients.find((c: any) => c.userId === auth.user?.id);
+                if (currentClient) {
+                  setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+                }
+              }
+              setShowModal(true); 
+            }}
             className="bg-lime-400 text-slate-900 px-5 py-2.5 rounded-full hover:bg-lime-300 flex items-center transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] font-semibold"
           >
             <Plus size={20} className="mr-2" /> New Shipment
@@ -495,19 +533,22 @@ const Shipments: React.FC = () => {
             )}
 
             <form onSubmit={handleSave} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Client</label>
-                  <select
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
-                    required
-                    value={formData.clientId}
-                    onChange={e => setFormData({ ...formData, clientId: e.target.value })}
-                  >
-                    <option value="">Select Client</option>
-                    {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name || c.username || c.first_name}</option>)}
-                  </select>
-                </div>
+              <div className={`grid gap-4 ${auth.user?.role?.toLowerCase() === 'client' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {/* Only show client selection for admins/managers, not for clients themselves */}
+                {auth.user?.role?.toLowerCase() !== 'client' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Client</label>
+                    <select
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
+                      required
+                      value={formData.clientId}
+                      onChange={e => setFormData({ ...formData, clientId: e.target.value })}
+                    >
+                      <option value="">Select Client</option>
+                      {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name || c.username || c.first_name}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Currency</label>
                   <select
