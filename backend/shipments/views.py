@@ -3,7 +3,7 @@ from .models import Shipment
 from .serializers import ShipmentSerializer
 from users.permissions import (
     IsManager, IsClient, IsShipmentOwner, 
-    ClientCanCreateOnly
+    ClientCanCreateOnly, IsManagerOrShipmentOwner
 )
 from users.audit import AuditLogMixin
 
@@ -21,7 +21,7 @@ class ShipmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
         if self.action == 'create':
             return [ClientCanCreateOnly()]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsManager()]
+            return [IsManagerOrShipmentOwner()]
         return [IsClient()]
     
     def get_queryset(self):

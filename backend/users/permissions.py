@@ -255,3 +255,22 @@ class IsManagerOrOwner(permissions.BasePermission):
             owner = obj.owner
         
         return owner is not None and owner.id == request.user.id
+
+
+class IsManagerOrShipmentOwner(permissions.BasePermission):
+    """Manager or shipment owner can modify shipments"""
+    message = "Access denied."
+    
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        # Managers/Admins can modify any shipment
+        if request.user.role in ['admin', 'manager']:
+            return True
+        
+        # Clients can modify their own shipments
+        if request.user.role == 'client':
+            return IsShipmentOwner().has_object_permission(request, view, obj)
+        
+        return False
