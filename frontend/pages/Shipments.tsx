@@ -497,7 +497,7 @@ const Shipments: React.FC = () => {
             <form onSubmit={handleSave} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Client (Must be registered)</label>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Client</label>
                   <select
                     className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
                     required
