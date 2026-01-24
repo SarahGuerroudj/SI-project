@@ -308,14 +308,13 @@ const Shipments: React.FC = () => {
     }
 
     // For clients, check if they own this shipment
+    // Note: shipment.clientId is the User ID, not Client model ID
     if (auth.user?.role?.toLowerCase() === 'client') {
-      const currentClient = clients.find((c: any) => {
-        const clientUserId = c.userId?.toString();
-        const authUserId = auth.user?.id?.toString();
-        return clientUserId === authUserId;
-      });
+      const authUserId = auth.user?.id?.toString();
+      const shipmentClientUserId = shipment.clientId?.toString();
       
-      if (currentClient && shipment.clientId !== currentClient.id) {
+      // Compare User IDs directly
+      if (shipmentClientUserId !== authUserId) {
         const msg = 'You can only edit your own shipments.';
         try { addToast('error', msg); } catch (err) { }
         return;
@@ -411,14 +410,13 @@ const Shipments: React.FC = () => {
     }
 
     // For clients, check if they own this shipment
+    // Note: shipment.clientId is the User ID, not Client model ID
     if (auth.user?.role?.toLowerCase() === 'client') {
-      const currentClient = clients.find((c: any) => {
-        const clientUserId = c.userId?.toString();
-        const authUserId = auth.user?.id?.toString();
-        return clientUserId === authUserId;
-      });
+      const authUserId = auth.user?.id?.toString();
+      const shipmentClientUserId = shipment.clientId?.toString();
       
-      if (currentClient && shipment.clientId !== currentClient.id) {
+      // Compare User IDs directly
+      if (shipmentClientUserId !== authUserId) {
         const msg = 'You can only delete your own shipments.';
         setErrors([msg]);
         try { addToast('error', msg); } catch (err) { }
