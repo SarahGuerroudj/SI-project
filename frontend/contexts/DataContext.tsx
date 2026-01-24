@@ -48,20 +48,48 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     clients: useQuery({
       queryKey: ['clients'],
       queryFn: async () => {
-        const res = await apiClient.get(ENDPOINTS.CLIENTS);
-        return res.data.map((c: any) => ({
-          id: c.id.toString(),
-          userId: c.user?.toString() || c.user_details?.id?.toString() || '',
-          name: c.user_details?.first_name || c.user_details?.username || 'Unknown',
-          email: c.user_details?.email || '',
-          phone: c.user_details?.phone || '',
-          address: c.user_details?.address || '',
-          balance: parseFloat(c.user_details?.balance) || 0,
-          clientType: c.client_type,
-          companyName: c.company_name,
-          taxId: c.tax_id,
-          website: c.website,
-        }));
+        try {
+          // Try to get full clients list (for managers/admins)
+          const res = await apiClient.get(ENDPOINTS.CLIENTS);
+          return res.data.map((c: any) => ({
+            id: c.id.toString(),
+            userId: c.user?.toString() || c.user_details?.id?.toString() || '',
+            name: c.user_details?.first_name || c.user_details?.username || 'Unknown',
+            email: c.user_details?.email || '',
+            phone: c.user_details?.phone || '',
+            address: c.user_details?.address || '',
+            balance: parseFloat(c.user_details?.balance) || 0,
+            clientType: c.client_type,
+            companyName: c.company_name,
+            taxId: c.tax_id,
+            website: c.website,
+          }));
+        } catch (error: any) {
+          // If 403, try to get own client record (for clients)
+          if (error.response?.status === 403) {
+            try {
+              const res = await apiClient.get(`${ENDPOINTS.CLIENTS}me/`);
+              const c = res.data;
+              return [{
+                id: c.id.toString(),
+                userId: c.user?.toString() || c.user_details?.id?.toString() || '',
+                name: c.user_details?.first_name || c.user_details?.username || 'Unknown',
+                email: c.user_details?.email || '',
+                phone: c.user_details?.phone || '',
+                address: c.user_details?.address || '',
+                balance: parseFloat(c.user_details?.balance) || 0,
+                clientType: c.client_type,
+                companyName: c.company_name,
+                taxId: c.tax_id,
+                website: c.website,
+              }];
+            } catch (meError) {
+              console.error('Failed to fetch own client record:', meError);
+              return [];
+            }
+          }
+          throw error;
+        }
       }
     }),
     drivers: useQuery({
@@ -284,14 +312,22 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const getItems = <T extends Entity>(entityType: EntityType): T[] => {
     const query = queries[entityType as keyof typeof queries];
 
-    // Log errors and empty states to help debugging
+    // Log errors and empty states to help debugging (but not for 403 errors which are expected for clients)
     if (query?.isError) {
-      console.error(`DataContext: Error fetching ${entityType}:`, query.error);
+      const error = query.error as any;
+      // Don't log 403 errors as they're expected for clients accessing restricted endpoints
+      if (error?.response?.status !== 403) {
+        console.error(`DataContext: Error fetching ${entityType}:`, query.error);
+      }
     }
 
     const data = (query?.data || []) as T[];
+    // Don't warn about empty lists if it's a 403 (expected for clients)
     if (data.length === 0 && !query?.isLoading) {
-      console.warn(`DataContext: ${entityType} list is empty.`);
+      const error = query?.error as any;
+      if (error?.response?.status !== 403) {
+        console.warn(`DataContext: ${entityType} list is empty.`);
+      }
     }
 
     return data;
