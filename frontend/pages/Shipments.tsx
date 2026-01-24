@@ -11,7 +11,7 @@ import { auditLog } from '../services/auditLog';
 import { useData } from '../contexts/DataContext';
 
 const Shipments: React.FC = () => {
-  const { getItems, addItem, deleteItem, updateItem } = useData();
+  const { getItems, addItem, deleteItem, updateItem, isClientsLoading, refetchClients } = useData();
   const shipments = getItems<Shipment>('shipments');
   const clients = getItems<any>('clients'); // Accessing raw users for now, or mapped clients
   // Use destinationRecords for the full detailed list
@@ -48,6 +48,18 @@ const Shipments: React.FC = () => {
   // Auto-set clientId when modal opens and user is a client
   useEffect(() => {
     if (showModal && auth.user?.role?.toLowerCase() === 'client' && !isEditing) {
+      // Wait for clients to finish loading
+      if (isClientsLoading) {
+        return; // Clients still loading, will retry when they finish
+      }
+
+      // If clients are not loading but array is empty, try to refetch
+      if (clients.length === 0 && !isClientsLoading) {
+        console.log('Clients array empty, refetching...');
+        refetchClients();
+        return;
+      }
+      
       // Wait for clients to load
       if (clients.length === 0) {
         return; // Clients not loaded yet, will retry when they load
@@ -78,7 +90,7 @@ const Shipments: React.FC = () => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal, auth.user?.id, auth.user?.role, isEditing, clients]);
+  }, [showModal, auth.user?.id, auth.user?.role, isEditing, clients, isClientsLoading]);
 
   const currencySymbol = (c: 'EUR' | 'DZD') => c === 'DZD' ? 'د.ج' : '€';
 
@@ -125,11 +137,31 @@ const Shipments: React.FC = () => {
     // Auto-set clientId for clients if not set
     let finalClientId = formData.clientId;
     if (!finalClientId && auth.user?.role?.toLowerCase() === 'client') {
-      // Check if clients are loaded
-      if (clients.length === 0) {
+      // Check if clients are still loading
+      if (isClientsLoading) {
         newErrors.push('Client data is still loading. Please wait a moment and try again.');
         setErrors(newErrors);
         try { addToast('error', 'Client data is still loading. Please wait a moment and try again.'); } catch (err) { }
+        return;
+      }
+
+      // If clients array is empty but not loading, try to refetch
+      if (clients.length === 0 && !isClientsLoading) {
+        console.log('Clients array is empty, attempting to refetch...');
+        try {
+          await refetchClients();
+          // Wait a bit for the refetch to complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (err) {
+          console.error('Failed to refetch clients:', err);
+        }
+      }
+
+      // Check again after potential refetch
+      if (clients.length === 0) {
+        newErrors.push('Unable to load client data. Please refresh the page or contact support.');
+        setErrors(newErrors);
+        try { addToast('error', 'Unable to load client data. Please refresh the page.'); } catch (err) { }
         return;
       }
 

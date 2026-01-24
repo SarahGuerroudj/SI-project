@@ -35,6 +35,8 @@ interface DataContextType {
   updateItem: <T extends Entity>(entityType: EntityType, item: T) => Promise<void>;
   deleteItem: (entityType: EntityType, id: string) => Promise<void>;
   isLoading: boolean;
+  isClientsLoading: boolean;
+  refetchClients: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -273,6 +275,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isLoading = Object.values(queries).some(q => q.isLoading);
+  const isClientsLoading = queries.clients.isLoading;
+
+  const refetchClients = async () => {
+    await queries.clients.refetch();
+  };
 
   const getItems = <T extends Entity>(entityType: EntityType): T[] => {
     const query = queries[entityType as keyof typeof queries];
@@ -717,7 +724,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <DataContext.Provider value={{ getItems, addItem, updateItem, deleteItem, isLoading }}>
+    <DataContext.Provider value={{ getItems, addItem, updateItem, deleteItem, isLoading, isClientsLoading, refetchClients }}>
       {children}
     </DataContext.Provider>
   );
