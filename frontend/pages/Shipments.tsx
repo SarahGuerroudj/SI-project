@@ -228,6 +228,18 @@ const Shipments: React.FC = () => {
     if (!formData.destinationId) {
       newErrors.push('Please select a destination.');
     }
+    
+    // Validate estimated delivery date - must be today or future
+    if (formData.estimatedDelivery) {
+      const selectedDate = new Date(formData.estimatedDelivery);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        newErrors.push('Estimated delivery date cannot be in the past. Please select today or a future date.');
+      }
+    }
 
     if (newErrors.length > 0) {
       setErrors(newErrors);
@@ -795,6 +807,7 @@ const Shipments: React.FC = () => {
                   <input
                     ref={dateInputRef}
                     type="date"
+                    min={new Date().toISOString().split('T')[0]}
                     className="w-full pr-12 p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-lime-400 transition-colors"
                     required
                     value={formData.estimatedDelivery}
