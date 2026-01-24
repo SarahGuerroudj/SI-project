@@ -48,13 +48,28 @@ const Shipments: React.FC = () => {
   // Auto-set clientId when modal opens and user is a client
   useEffect(() => {
     if (showModal && auth.user?.role?.toLowerCase() === 'client' && !isEditing) {
-      const currentClient = clients.find((c: any) => c.userId === auth.user?.id);
-      if (currentClient && formData.clientId !== currentClient.id) {
-        setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+      // Wait for clients to load
+      if (clients.length === 0) {
+        return; // Clients not loaded yet, will retry when they load
+      }
+      
+      const currentClient = clients.find((c: any) => {
+        // Match by userId (could be string or number)
+        const clientUserId = c.userId?.toString();
+        const authUserId = auth.user?.id?.toString();
+        return clientUserId === authUserId;
+      });
+      
+      if (currentClient) {
+        if (formData.clientId !== currentClient.id) {
+          setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+        }
+      } else {
+        console.warn('Could not find client for user:', auth.user?.id, 'Available clients:', clients.map((c: any) => ({ id: c.id, userId: c.userId })));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal, auth.user?.id, auth.user?.role, isEditing]);
+  }, [showModal, auth.user?.id, auth.user?.role, isEditing, clients]);
 
   const currencySymbol = (c: 'EUR' | 'DZD') => c === 'DZD' ? 'د.ج' : '€';
 
@@ -98,7 +113,22 @@ const Shipments: React.FC = () => {
       return;
     }
 
-    if (!formData.clientId) {
+    // Auto-set clientId for clients if not set
+    let finalClientId = formData.clientId;
+    if (!finalClientId && auth.user?.role?.toLowerCase() === 'client') {
+      const currentClient = clients.find((c: any) => {
+        // Match by userId (could be string or number)
+        const clientUserId = c.userId?.toString();
+        const authUserId = auth.user?.id?.toString();
+        return clientUserId === authUserId;
+      });
+      if (currentClient) {
+        finalClientId = currentClient.id;
+        setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+      }
+    }
+
+    if (!finalClientId) {
       newErrors.push('Please select a client.');
     }
     if (!formData.destinationId) {
@@ -133,7 +163,7 @@ const Shipments: React.FC = () => {
     const price = baseRate + (weight * weightRate) + (volume * volumeRate);
 
     const payload = {
-      clientId: formData.clientId,
+      clientId: finalClientId,
       destinationId: formData.destinationId,
       weight,
       volume,
@@ -294,14 +324,20 @@ const Shipments: React.FC = () => {
           <button
             onClick={() => { 
               resetForm(); 
-              // Auto-set clientId for clients after reset
-              if (auth.user?.role?.toLowerCase() === 'client') {
-                const currentClient = clients.find((c: any) => c.userId === auth.user?.id);
-                if (currentClient) {
-                  setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+              setShowModal(true);
+              // Auto-set clientId for clients after modal opens (clients might not be loaded yet)
+              setTimeout(() => {
+                if (auth.user?.role?.toLowerCase() === 'client' && clients.length > 0) {
+                  const currentClient = clients.find((c: any) => {
+                    const clientUserId = c.userId?.toString();
+                    const authUserId = auth.user?.id?.toString();
+                    return clientUserId === authUserId;
+                  });
+                  if (currentClient) {
+                    setFormData(prev => ({ ...prev, clientId: currentClient.id }));
+                  }
                 }
-              }
-              setShowModal(true); 
+              }, 100);
             }}
             className="bg-lime-400 text-slate-900 px-5 py-2.5 rounded-full hover:bg-lime-300 flex items-center transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] font-semibold"
           >
