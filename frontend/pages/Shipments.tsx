@@ -301,16 +301,39 @@ const Shipments: React.FC = () => {
 
   const handleEdit = (shipment: Shipment) => {
     // Check permissions
-    // Check permissions
     if (!auth.authorize(['Manager', 'Admin', 'driver', 'Client'])) {
       const msg = 'Insufficient permissions to edit shipments.';
       try { addToast('error', msg); } catch (err) { }
       return;
     }
 
-    // Check if locked
+    // For clients, check if they own this shipment
+    if (auth.user?.role?.toLowerCase() === 'client') {
+      const currentClient = clients.find((c: any) => {
+        const clientUserId = c.userId?.toString();
+        const authUserId = auth.user?.id?.toString();
+        return clientUserId === authUserId;
+      });
+      
+      if (currentClient && shipment.clientId !== currentClient.id) {
+        const msg = 'You can only edit your own shipments.';
+        try { addToast('error', msg); } catch (err) { }
+        return;
+      }
+    }
+
+    // Check if locked (assigned to route)
     if (shipment.isLocked) {
-      const msg = 'Cannot edit a locked shipment.';
+      const msg = 'Cannot edit a shipment that is assigned to a delivery route.';
+      try { addToast('error', msg); } catch (err) { }
+      return;
+    }
+
+    // Check if status allows modification
+    if (!canModifyShipment(shipment, auth.user?.role)) {
+      const msg = shipment.status === ShipmentStatus.DELIVERED 
+        ? 'Cannot edit a delivered shipment.'
+        : 'This shipment cannot be edited in its current status.';
       try { addToast('error', msg); } catch (err) { }
       return;
     }
@@ -379,17 +402,41 @@ const Shipments: React.FC = () => {
   const handleDeleteShipment = async (shipmentId: string) => {
     const shipment = shipments.find(s => s.id === shipmentId);
 
-    // Rule 3: Prevent deletion if shipment is locked (assigned to route)
-    if (shipment && !canModifyShipment(shipment)) {
-      const msg = 'Cannot delete shipment that is assigned to a delivery route.';
+    // Check if locked (assigned to route)
+    if (shipment && shipment.isLocked) {
+      const msg = 'Cannot delete a shipment that is assigned to a delivery route.';
       setErrors([msg]);
       try { addToast('error', msg); } catch (err) { }
       return;
     }
 
-    // Authorization: only Admin can delete shipments
+    // For clients, check if they own this shipment
+    if (auth.user?.role?.toLowerCase() === 'client') {
+      const currentClient = clients.find((c: any) => {
+        const clientUserId = c.userId?.toString();
+        const authUserId = auth.user?.id?.toString();
+        return clientUserId === authUserId;
+      });
+      
+      if (currentClient && shipment.clientId !== currentClient.id) {
+        const msg = 'You can only delete your own shipments.';
+        setErrors([msg]);
+        try { addToast('error', msg); } catch (err) { }
+        return;
+      }
+
+      // Clients cannot delete delivered shipments
+      if (shipment.status === ShipmentStatus.DELIVERED) {
+        const msg = 'Cannot delete a delivered shipment.';
+        setErrors([msg]);
+        try { addToast('error', msg); } catch (err) { }
+        return;
+      }
+    }
+
+    // Authorization check
     if (!auth.authorize(['Admin', 'Manager', 'Client'])) {
-      const msg = 'Only administrators can delete shipments.';
+      const msg = 'Insufficient permissions to delete shipments.';
       setErrors([msg]);
       try { addToast('error', msg); } catch (err) { }
       auditLog.log('delete_shipment_forbidden', 'security', auth.user?.id ?? null, { shipmentId });
@@ -589,7 +636,7 @@ const Shipments: React.FC = () => {
                             <Lock size={14} className="mr-1" /> Locked
                           </div>
                         )}
-                        {!shipment.isLocked && (
+                        {canModifyShipment(shipment, auth.user?.role) && (
                           <button
                             onClick={() => handleEdit(shipment)}
                             className="inline-flex items-center text-sm font-medium px-3 py-1.5 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-lime-600 dark:hover:text-lime-400 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -603,7 +650,7 @@ const Shipments: React.FC = () => {
                         >
                           <History size={16} className="mr-2" /> History
                         </button>
-                        {!shipment.isLocked && (
+                        {canModifyShipment(shipment, auth.user?.role) && shipment.status !== ShipmentStatus.DELIVERED && (
                           <button
                             onClick={() => handleDeleteShipment(shipment.id)}
                             className="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg"

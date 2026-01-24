@@ -34,8 +34,23 @@ export const calculateShipmentPrice = (
 };
 
 // Rule 3: Shipment Modification Lock
-export const canModifyShipment = (shipment: Shipment): boolean => {
-  return !shipment.isLocked && shipment.status === ShipmentStatus.PENDING;
+// Shipments can be modified if:
+// - Not locked (not assigned to a route)
+// - Status is PENDING (for all users)
+// OR for clients: can modify their own shipments if not locked, regardless of status (except DELIVERED)
+export const canModifyShipment = (shipment: Shipment, userRole?: string): boolean => {
+  // If locked (assigned to route), cannot modify
+  if (shipment.isLocked) {
+    return false;
+  }
+  
+  // Clients can modify their own shipments if status is not DELIVERED
+  if (userRole?.toLowerCase() === 'client') {
+    return shipment.status !== ShipmentStatus.DELIVERED;
+  }
+  
+  // For other users (managers/admins), only PENDING can be modified
+  return shipment.status === ShipmentStatus.PENDING;
 };
 
 export const lockShipmentForRoute = (shipment: Shipment, routeId: string): Shipment => {

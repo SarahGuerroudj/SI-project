@@ -138,7 +138,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           dateCreated: s.dateCreated?.split('T')[0] || new Date().toISOString().split('T')[0],
           estimatedDelivery: s.estimatedDelivery?.split('T')[0] || '',
           history: s.history || [],
-          isLocked: s.status !== 'Pending', // Simple logic for now
+          routeId: s.route || s.routeId || undefined,
+          isLocked: !!(s.route || s.routeId), // Locked only if assigned to a route
         }));
       }
     }),
