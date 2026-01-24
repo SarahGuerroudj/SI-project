@@ -613,10 +613,27 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           };
         } else if (entityType === 'shipments') {
           const shipmentItem = item as any;
-          // Find the client to get the userId (User ID, not Client model ID)
           const clients = queries.clients.data || [];
-          const selectedClient = clients.find((c: any) => c.id === shipmentItem.clientId);
-          const userId = selectedClient?.userId || shipmentItem.userId;
+          
+          // shipmentItem.clientId could be either:
+          // 1. User ID (if coming from backend shipment data)
+          // 2. Client model ID (if coming from form selection)
+          let userId: string | undefined;
+          
+          // First, check if clientId matches any client's userId (it's already a User ID)
+          const clientByUserId = clients.find((c: any) => c.userId?.toString() === shipmentItem.clientId?.toString());
+          if (clientByUserId) {
+            userId = clientByUserId.userId;
+          } else {
+            // Otherwise, try to find by Client model ID
+            const selectedClient = clients.find((c: any) => c.id?.toString() === shipmentItem.clientId?.toString());
+            userId = selectedClient?.userId || shipmentItem.userId;
+          }
+          
+          // If still no userId, use clientId directly (assuming it's already a User ID from backend)
+          if (!userId && shipmentItem.clientId) {
+            userId = shipmentItem.clientId.toString();
+          }
           
           if (!userId) {
             throw new Error('Client user ID not found. Please select a valid client.');
