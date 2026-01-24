@@ -21,6 +21,7 @@ import { NavItem } from '../types/navigation';
 
 export const defaultMainNavItems: NavItem[] = [
     { id: 'dashboard', name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard', allowedRoles: ['admin', 'manager', 'driver'] },
+    { id: 'client-dashboard', name: 'Client Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard', allowedRoles: ['client'] },
     { id: 'shipments', name: 'Shipments', icon: <Package size={20} />, path: '/shipments', allowedRoles: ['admin', 'manager', 'client', 'driver'] },
     { id: 'routes', name: 'Routes', icon: <Map size={20} />, path: '/routes', allowedRoles: ['admin', 'manager', 'driver'] },
     { id: 'billing', name: 'Billing', icon: <CreditCard size={20} />, path: '/billing', allowedRoles: ['admin', 'manager'] },
