@@ -277,28 +277,68 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       }
     }),
     destinationRecords: useQuery({
-      queryKey: ['destinationRecords'],
+      queryKey: ['destinationRecords', 'pricing'],
       queryFn: async () => {
-        const res = await apiClient.get(ENDPOINTS.DESTINATIONS);
-        return res.data.map((d: any) => ({
-          id: d.id,
-          name: d.name,
-          country: d.country,
-          city: d.city,
-          deliveryZone: d.deliveryZone || d.delivery_zone,
-          distanceKm: d.distanceKm || d.distance_km || 0,
-          type: d.type,
-          destinationType: d.destinationType || d.destination_type || 'Domestic',
-          status: (d.isActive !== undefined ? d.isActive : d.is_active) ? 'Active' : 'Inactive',
-          isActive: d.isActive !== undefined ? d.isActive : d.is_active,
-          activeDeliveries: 0,
-          packagesCapacity: 1000,
-          availableSpace: 1000,
-          contact: d.contact || '',
-          serviceArea: d.serviceArea || d.service_area || '',
-          linkedRoutes: d.linkedRoutes || d.linked_routes || [],
-          drivers: d.drivers || []
-        }));
+        const [destRes, pricingRes] = await Promise.all([
+          apiClient.get(ENDPOINTS.DESTINATIONS),
+          apiClient.get(ENDPOINTS.PRICING_RULES).catch(() => ({ data: [] }))
+        ]);
+        
+        // Create a map of destination IDs to their pricing data
+        const pricingMap = new Map();
+        if (pricingRes.data && Array.isArray(pricingRes.data)) {
+          pricingRes.data.forEach((p: any) => {
+            pricingMap.set(p.destinationId, {
+              baseRate: parseFloat(p.basePrice || p.base_price || 50),
+              pricePerKm: parseFloat(p.pricePerKm || p.price_per_km || 15)
+            });
+          });
+        }
+        
+        return destRes.data.map((d: any) => {
+          // Calculate intelligent fallback pricing based on destination properties
+          let defaultBaseRate = 50;
+          let defaultPricePerKm = 15;
+          
+          if (!pricingMap.has(d.id)) {
+            // If no pricing rule exists, calculate based on destination type and distance
+            if (d.destination_type === 'International') {
+              defaultBaseRate = 150; // International destinations have higher base rates
+              defaultPricePerKm = 25;
+            } else if (d.distance_km > 1000) {
+              defaultBaseRate = 120; // Long distance domestic
+              defaultPricePerKm = 20;
+            } else if (d.distance_km > 500) {
+              defaultBaseRate = 80; // Medium distance domestic
+              defaultPricePerKm = 18;
+            }
+          }
+          
+          const pricing = pricingMap.get(d.id) || { baseRate: defaultBaseRate, pricePerKm: defaultPricePerKm };
+          return {
+            id: d.id,
+            name: d.name,
+            country: d.country,
+            city: d.city,
+            deliveryZone: d.deliveryZone || d.delivery_zone,
+            distanceKm: d.distanceKm || d.distance_km || 0,
+            type: d.type,
+            destinationType: d.destinationType || d.destination_type || 'Domestic',
+            status: (d.isActive !== undefined ? d.isActive : d.is_active) ? 'Active' : 'Inactive',
+            isActive: d.isActive !== undefined ? d.isActive : d.is_active,
+            activeDeliveries: 0,
+            packagesCapacity: 1000,
+            availableSpace: 1000,
+            contact: d.contact || '',
+            serviceArea: d.serviceArea || d.service_area || '',
+            linkedRoutes: d.linkedRoutes || d.linked_routes || [],
+            drivers: d.drivers || [],
+            baseRate: pricing.baseRate,
+            pricePerKm: pricing.pricePerKm,
+            weightRate: 0.5,
+            volumeRate: 10
+          };
+        });
       }
     }),
   };
